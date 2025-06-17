@@ -1,0 +1,97 @@
+@startuml Diagramme de classes
+
+title Diagramme de classes
+
+class MaisonMere {
+  +id
+  +nom
+  --
+  +creerProduit(p: Produit)
+  +mettreAJourProduit(p: Produit)
+  +supprimerProduit(p: Produit)
+  +genererRapportVentes()
+  +visualiserDashboard()
+}
+
+class Magasin {
+  +id
+  +nom
+  +adresse
+  --
+  +consulterStock()
+}
+
+class Produit {
+  +id
+  +nom
+  +prix
+  +description
+}
+
+class Stock {
+  +id
+  +magasinId
+  +produitId
+  +quantite
+  --
+  +verifierDisponibilite(qte: int)
+}
+
+class User {
+  +id
+  +nom
+  +role
+  +password
+  --
+  +authentifier()
+}
+
+class Client {
+  --
+  +acheter(produits: List<Produit>, magasin: Magasin)
+  +consulterAchats()
+}
+
+class Gestionnaire {
+  --
+  +gererProduits()
+  +consulterDashboard()
+}
+
+class Vente {
+  +id
+  +magasinId
+  +userId
+  +date
+  +total
+  --
+  +calculerTotal()
+}
+
+class LigneVente {
+  +id
+  +venteId
+  +produitId
+  +quantite
+  +prixUnitaire
+  --
+  +calculerSousTotal()
+}
+
+'--- Relations principales ---
+MaisonMere "1" o-- "*" Magasin : supervise
+MaisonMere "1" o-- "*" Produit : gere
+
+Magasin "1" o-- "*" Stock : possède
+Stock "*" o-- "1" Produit : concerne
+
+User <|-- Client
+User <|-- Gestionnaire
+
+Client "1" o-- "*" Vente : effectue
+Magasin "1" o-- "*" Vente : effectue
+
+Vente "1" o-- "*" LigneVente : compose
+LigneVente "*" o-- "1" Produit : concerne
+
+@enduml

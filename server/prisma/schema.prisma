@@ -1,0 +1,187 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * Magasin (Store) Model
+ * 
+ * Represents a physical store location in the retail network.
+ * Each store has inventory stock, sales.
+ * 
+ * Relationships:
+ * - One-to-Many with Stock: A store has multiple product stock records
+ * - One-to-Many with Vente: A store processes multiple sales
+ * - One-to-Many with Refund: A store processes multiple refunds
+ */
+model Magasin {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  adresse   String?
+  stocks    Stock[]
+  ventes    Vente[]
+  refunds   Refund[]
+}
+
+/**
+ * Product Model
+ * 
+ * Represents a product in the retail catalog.
+ * Products are stocked in stores, sold through sales.
+ * 
+ * Relationships:
+ * - One-to-Many with Stock: A product can be stocked in multiple stores
+ * - One-to-Many with Vente_ligne: A product can appear in multiple sale line items
+ * - One-to-Many with Refund_ligne: A product can be refunded in multiple refund line items
+ */
+model Product {
+  id          Int           @id @default(autoincrement())
+  nom         String
+  prix        Float
+  description String?
+  stocks      Stock[]
+  vente_lignes Vente_ligne[]
+  refund_lignes Refund_ligne[]
+}
+
+/**
+ * Stock Model
+ * 
+ * Represents the inventory level of a specific product in a specific store.
+ * This is a join table with additional data (quantity) between Magasin and Product.
+ * 
+ * Relationships:
+ * - Many-to-One with Magasin: Each stock record belongs to one store
+ * - Many-to-One with Product: Each stock record is for one product
+ * 
+ * Constraints:
+ * - Unique combination of magasinId and productId ensures only one stock record
+ *   exists per product per store
+ */
+model Stock {
+  id         Int      @id @default(autoincrement())
+  quantite   Int      @default(0)
+  magasin    Magasin  @relation(fields: [magasinId], references: [id])
+  magasinId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+  @@unique([magasinId, productId])
+}
+
+/**
+ * User Model
+ * 
+ * Represents a user who can either be a client or gestionnaire
+ * Users are identified by name and can have multiple sales transactions if they are clients.
+ * 
+ * Relationships:
+ * - One-to-Many with Vente: A user (client) can make multiple purchases
+ * - One-to-Many with Refund: A user can request multiple refunds
+ */
+model User {
+  id      Int    @id @default(autoincrement())
+  nom     String @unique
+  role    String @default("client")
+  password String @default("password") // Simple authentication
+  ventes  Vente[]
+  refunds Refund[]
+}
+
+/**
+ * Vente Model
+ * 
+ * Represents a sales transaction made by a user at a specific store.
+ * Each sale consists of multiple line items and has a total amount.
+ * 
+ * Relationships:
+ * - Many-to-One with Magasin: Each sale occurs at one store
+ * - Many-to-One with User: Each sale is made by one user (client)
+ * - One-to-Many with Vente_ligne: A sale consists of multiple line items
+ * - One-to-Many with Refund: A sale can have multiple partial refunds
+ */
+model Vente {
+  id         Int         @id @default(autoincrement())
+  date       DateTime    @default(now())
+  total      Float
+  status     String      @default("active") // active, refunded, partially_refunded
+  magasin    Magasin     @relation(fields: [magasinId], references: [id])
+  magasinId  Int
+  user       User        @relation(fields: [userId], references: [id])
+  userId     Int
+  lignes     Vente_ligne[]
+  refunds    Refund[]
+}
+
+/**
+ * Vente_ligne Model
+ * 
+ * Represents a single product line in a sales transaction.
+ * Contains quantity, unit price, and references to the sale and product.
+ * 
+ * Relationships:
+ * - Many-to-One with Vente: Each line item belongs to one sale
+ * - Many-to-One with Product: Each line item references one product
+ */
+model Vente_ligne {
+  id          Int     @id @default(autoincrement())
+  quantite    Int
+  prixUnitaire Float
+  vente       Vente   @relation(fields: [venteId], references: [id])
+  venteId     Int
+  product     Product @relation(fields: [productId], references: [id])
+  productId   Int
+}
+
+/**
+ * Refund Model
+ * 
+ * Represents a refund transaction associated with a sale.
+ * Each refund consists of multiple line items and has a total amount.
+ * 
+ * Relationships:
+ * - Many-to-One with Vente: Each refund is associated with one sale
+ * - Many-to-One with Magasin: Each refund is processed at one store
+ * - Many-to-One with User: Each refund is requested by one user
+ * - One-to-Many with Refund_ligne: A refund consists of multiple line items
+ */
+model Refund {
+  id          Int             @id @default(autoincrement())
+  date        DateTime        @default(now())
+  total       Float
+  reason      String?
+  vente       Vente           @relation(fields: [venteId], references: [id])
+  venteId     Int
+  magasin     Magasin         @relation(fields: [magasinId], references: [id])
+  magasinId   Int
+  user        User            @relation(fields: [userId], references: [id])
+  userId      Int
+  lignes      Refund_ligne[]
+}
+
+/**
+ * Refund_ligne Model
+ * 
+ * Represents a single product line in a refund transaction.
+ * Contains quantity, unit price, and references to the refund and product.
+ * 
+ * Relationships:
+ * - Many-to-One with Refund: Each refund line item belongs to one refund
+ * - Many-to-One with Product: Each refund line item references one product
+ */
+model Refund_ligne {
+  id          Int      @id @default(autoincrement())
+  quantite    Int
+  prixUnitaire Float
+  refund      Refund   @relation(fields: [refundId], references: [id])
+  refundId    Int
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   Int
+}
+

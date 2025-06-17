@@ -1,0 +1,56 @@
+@startuml
+title Modèle du domaine — LOG430 Magasin
+
+'–––––––––––  Entités  –––––––––––
+class Produit {
+    {key} id
+    nom
+    prix
+    description
+}
+
+class Magasin {
+    {key} id
+    nom
+    adresse
+}
+
+class Stock {
+    {key} id
+    magasinId
+    produitId
+    quantite
+}
+
+class User {
+    {key} id
+    nom
+    role
+    password
+}
+
+class Vente {
+    {key} id
+    magasinId
+    userId
+    date
+    total
+}
+
+class LigneVente {
+    {key} id
+    venteId
+    produitId
+    quantite
+    prixUnitaire
+}
+
+'–––––––––––  Associations & cardinalités  –––––––––––
+Magasin  "1"  o--  "0..*" Stock       : possède
+Produit  "1"  o--  "0..*" Stock       : stocké\npar
+
+Magasin  "1"  o--  "0..*" Vente       : réalise
+User     "1"  o--  "0..*" Vente       : effectue
+Vente    "1"  o--  "1..*" LigneVente  : comporte
+Produit  "1"  o--  "0..*" LigneVente  : présent\ncomme item
+@enduml

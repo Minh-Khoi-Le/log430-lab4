@@ -1,0 +1,33 @@
+@startuml RDCU Vente
+
+title RDCU - Vente produit
+
+actor Client
+participant "UI React" as Frontend
+participant "Express API" as Backend
+participant "VenteController" as Controller
+participant "VenteDAO" as DAO
+participant "Prisma (DB)" as DB
+
+Client -> Frontend : Valider achat (Confirmer panier)
+Frontend -> Backend : POST /api/v1/ventes {userId, magasinId, panier}
+Backend -> Controller : createVente(...)
+Controller -> DAO : createVente(...)
+DAO -> DB : Vérifier stock (stock.findFirst)
+DB --> DAO : Stock OK/KO
+alt Stock suffisant
+  DAO -> DB : Vérifier user (user.findUnique)
+  DB --> DAO : User OK
+  DAO -> DB : Créer vente (vente.create)
+  DAO -> DB : Créer lignes (ligneVente.createMany)
+  DAO -> DB : Update stocks (stock.updateMany)
+  DB --> DAO : Success
+  DAO --> Controller : {success, venteId}
+  Controller --> Backend : 201 Created (Achat confirmé)
+  Backend --> Frontend : 201 Created + Vente details
+else Stock insuffisant
+  DAO --> Controller : {error: out of stock}
+  Controller --> Backend : 400 Bad Request
+  Backend --> Frontend : 400 (Erreur stock)
+end
+@enduml

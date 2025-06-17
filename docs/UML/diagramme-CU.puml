@@ -1,0 +1,28 @@
+@startuml Diagramme CU
+title Diagramme CU - Gestion d'un magasin
+
+actor Client
+actor Gestionnaire
+
+usecase "Consulter produits" as UC1
+usecase "Effectuer un achat" as UC2
+usecase "Voir historique achats" as UC3
+usecase "S'authentifier" as UC4
+usecase "Gérer les produits" as UC5
+usecase "Gérer les magasins" as UC6
+usecase "Consulter les stocks" as UC7
+usecase "Consulter dashboard" as UC8
+
+Client --> UC1
+Client --> UC2
+Client --> UC3
+Client --> UC4
+
+Gestionnaire --> UC1
+Gestionnaire --> UC4
+Gestionnaire --> UC5
+Gestionnaire --> UC6
+Gestionnaire --> UC7
+Gestionnaire --> UC8
+
+@enduml

@@ -31,3 +31,4 @@ yarn-error.log*
 Thumbs.db
 kubectl.exe
 minikube.exe
+k6.exe

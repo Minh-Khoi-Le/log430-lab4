@@ -13,27 +13,27 @@ This directory contains the Kubernetes manifests for deploying the LOG430 applic
 1. Start Minikube:
 
    ```bash
-   .\minikube.exe start
+   minikube start --driver=docker
    ```
 
 2. Build Docker images:
 
    ```bash
-   .\setup-minikube.bat
+   scripts\setup-minikube.bat
    ```
 
 3. Apply Kubernetes configurations:
 
    ```bash
-   .\kubectl.exe apply -f k8s/postgres.yaml
-   .\kubectl.exe apply -f k8s/fixed-server.yaml
-   .\kubectl.exe apply -f k8s/client1.yaml -f k8s/client2.yaml -f k8s/client3.yaml
+   kubectl apply -f k8s/postgres.yaml
+   kubectl apply -f k8s/fixed-server.yaml
+   kubectl apply -f k8s/client1.yaml -f k8s/client2.yaml -f k8s/client3.yaml
    ```
 
 4. Launch port forwarding for all services:
 
    ```bash
-   .\port-forward-all.bat
+   scripts\port-forward-all.bat
    ```
 
 5. Access your application:
@@ -44,13 +44,15 @@ This directory contains the Kubernetes manifests for deploying the LOG430 applic
 
 ## Utility Scripts
 
-The project includes several helpful batch scripts:
+The project includes several helpful scripts in the `scripts` directory:
 
-| Script                 | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `setup-minikube.bat`   | Sets up Minikube environment and builds Docker images        |
-| `redeploy.bat`         | Rebuilds Docker images and restarts all deployments          |
-| `port-forward-all.bat` | Sets up port forwarding for all services in separate windows |
+| Script                     | Description                                                  |
+| -------------------------- | ------------------------------------------------------------ |
+| `setup-minikube.bat`       | Sets up Minikube environment and builds Docker images        |
+| `redeploy.bat`             | Rebuilds Docker images and restarts all deployments          |
+| `port-forward-all.bat`     | Sets up port forwarding for all services in separate windows |
+| `port-forward-monitoring.bat` | Sets up port forwarding for Prometheus and Grafana only   |
+| `test-load-balancing.bat`  | Tests the load balancing implementation                      |
 
 ## Database Seeding
 
@@ -64,7 +66,7 @@ The server deployment automatically seeds the database on startup. The seeding p
 If you need to modify the seeding behavior:
 
 1. Edit the `server/seed.js` file
-2. Rebuild and redeploy with `.\redeploy.bat`
+2. Rebuild and redeploy with `scripts\redeploy.bat`
 
 ## Accessing the Application
 
@@ -73,7 +75,7 @@ If you need to modify the seeding behavior:
 Simply run:
 
 ```bash
-.\port-forward-all.bat
+scripts\port-forward-all.bat
 ```
 
 This opens separate terminal windows for each service with proper port forwarding.
@@ -84,12 +86,12 @@ For individual services:
 
 ```bash
 # For server API
-.\kubectl.exe port-forward service/server 3000:3000
+kubectl port-forward service/server 3000:3000
 
 # For client apps
-.\kubectl.exe port-forward service/client1 8081:80
-.\kubectl.exe port-forward service/client2 8082:80
-.\kubectl.exe port-forward service/client3 8083:80
+kubectl port-forward service/client1 8081:80
+kubectl port-forward service/client2 8082:80
+kubectl port-forward service/client3 8083:80
 ```
 
 ### Method 3: NodePort Access
@@ -98,7 +100,7 @@ Access the clients directly through NodePort:
 
 ```bash
 # Get the Minikube IP
-.\minikube.exe ip
+minikube ip
 ```
 
 Then visit:
@@ -113,13 +115,13 @@ Then visit:
 
 ```bash
 # Get pod names
-.\kubectl.exe get pods
+kubectl get pods
 
 # View logs from a pod
-.\kubectl.exe logs <pod-name>
+kubectl logs <pod-name>
 
 # For more logs
-.\kubectl.exe logs <pod-name> --tail=50
+kubectl logs <pod-name> --tail=50
 ```
 
 ## Updating After Code Changes
@@ -127,7 +129,7 @@ Then visit:
 After making code changes, simply run:
 
 ```bash
-.\redeploy.bat
+scripts\redeploy.bat
 ```
 
 This will:
@@ -141,11 +143,11 @@ This will:
 To stop the Kubernetes cluster:
 
 ```bash
-.\minikube.exe stop
+minikube stop
 ```
 
 To delete the cluster:
 
 ```bash
-.\minikube.exe delete
+minikube delete
 ```

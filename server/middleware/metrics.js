@@ -1,12 +1,17 @@
 import promClient from 'prom-client';
 import expressPromBundle from 'express-prom-bundle';
+import os from 'os';
+
+// Get hostname for pod identification
+const HOSTNAME = os.hostname();
 
 // Create a Registry to register the metrics
 const register = new promClient.Registry();
 
 // Add a default label which is added to all metrics
 register.setDefaultLabels({
-  app: 'log430-server'
+  app: 'log430-server',
+  pod: HOSTNAME
 });
 
 // We'll let express-prom-bundle collect the default metrics instead
@@ -27,9 +32,17 @@ const productOperations = new promClient.Counter({
   labelNames: ['operation', 'status']
 });
 
+// Request counter with pod information
+const requestsCounter = new promClient.Counter({
+  name: 'requests_total_by_pod',
+  help: 'Counter for requests by pod',
+  labelNames: ['pod', 'path']
+});
+
 // Register the custom metrics
 register.registerMetric(httpRequestDurationMicroseconds);
 register.registerMetric(productOperations);
+register.registerMetric(requestsCounter);
 
 // Create the middleware for express
 const metricsMiddleware = expressPromBundle({
@@ -44,6 +57,17 @@ const metricsMiddleware = expressPromBundle({
   promRegistry: register
 });
 
+// Pod identification middleware
+const podIdentifier = (req, res, next) => {
+  // Add pod identifier to response headers
+  res.setHeader('X-Serving-Pod', HOSTNAME);
+  
+  // Increment pod-specific request counter
+  requestsCounter.inc({ pod: HOSTNAME, path: req.path });
+  
+  next();
+};
+
 // Expose metrics endpoint for Prometheus to scrape
 const metricsEndpoint = (app) => {
   app.get('/metrics', async (req, res) => {
@@ -56,4 +80,4 @@ const metricsEndpoint = (app) => {
   });
 };
 
-export { metricsMiddleware, metricsEndpoint, register, productOperations }; 
+export { metricsMiddleware, metricsEndpoint, podIdentifier, register, productOperations }; 

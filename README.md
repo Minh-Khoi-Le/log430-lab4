@@ -1,194 +1,332 @@
-# LOG430 - Application de Gestion de Magasin
+# LOG430 - Store Management Application
+
+## Table of Contents
+
+- [LOG430 - Store Management Application](#log430---store-management-application)
+  - [Table of Contents](#table-of-contents)
+  - [Description](#description)
+  - [Technical Choices](#technical-choices)
+  - [Setup and Deployment](#setup-and-deployment)
+    - [Prerequisites](#prerequisites)
+    - [Docker Compose Deployment](#docker-compose-deployment)
+    - [Kubernetes Deployment](#kubernetes-deployment)
+      - [Standard Deployment](#standard-deployment)
+      - [Load-Balanced Deployment](#load-balanced-deployment)
+    - [Local Development](#local-development)
+  - [Load Balancing](#load-balancing)
+    - [Architecture](#architecture)
+    - [Implementation Details](#implementation-details)
+    - [Testing Load Balancing](#testing-load-balancing)
+  - [Monitoring](#monitoring)
+    - [Accessing Monitoring Tools](#accessing-monitoring-tools)
+      - [With Docker Compose:](#with-docker-compose)
+      - [With Kubernetes:](#with-kubernetes)
+    - [Key Metrics](#key-metrics)
+    - [Monitoring During Load Tests](#monitoring-during-load-tests)
+  - [Data Management](#data-management)
+    - [Default Data Injection](#default-data-injection)
+    - [Database Commands](#database-commands)
+  - [Testing](#testing)
+  - [Project Structure](#project-structure)
+  - [Additional Documentation](#additional-documentation)
 
 ## Description
 
-Cette application simule la gestion d'un magasin avec une interface web moderne :  
+This application simulates store management with a modern web interface:
 
-- Un frontend React (Vite)
-- Un backend Node.js (Express, DAO, Prisma/PostgreSQL) avec API REST documentée  
-  Les deux services sont orchestrés avec **Docker Compose**.  
-  Un pipeline **CI/CD** GitHub Actions automatise le build et les tests.
+- A React frontend (Vite)
+- A Node.js backend (Express, DAO, Prisma/PostgreSQL) with documented REST API
+  Both services are orchestrated with **Docker Compose**.
+  A **CI/CD** GitHub Actions pipeline automates the build and tests.
 
----
+## Technical Choices
 
-## Choix techniques
+Frontend: React / Vite / Material UI
 
-Frontend : React / Vite / Material UI
+Backend: Express (Node.js 20)
 
-Backend : Express (Node.js 20)
+Persistence: Prisma ORM / PostgreSQL
 
-Persistance : Prisma ORM / PostgreSQL
+Containerization: Docker Compose (client/server/db)
 
-Conteneurisation : Docker Compose (client/server/db)
+Orchestration: Kubernetes with Minikube
 
----
+## Setup and Deployment
 
-## Instructions d'exécution
+### Prerequisites
 
-### 1. **Prérequis**
+- **Docker & Docker Compose** installed
+- (Optional) Node.js 18+ to run locally outside Docker
+- For Kubernetes: Minikube and kubectl installed
 
-- **Docker & Docker Compose** installés
-- (Facultatif) Node.js 18+ pour lancer localement hors Docker
+### Docker Compose Deployment
 
----
-
-### Monitoring
-
-Le projet intègre Prometheus et Grafana pour la surveillance des métriques:
-
-- **Prometheus**: Collecte et stocke les métriques du serveur (http://localhost:9090)
-- **Grafana**: Visualise les métriques (http://localhost:3001, login: admin/admin)
-
-Pour plus d'informations sur la configuration et l'utilisation, consultez le fichier [monitoring-README.md](monitoring-README.md).
-
----
-
-### 2. **Lancer l'application complète**
-
-Avec Docker :
+The simplest way to run the application:
 
 ```bash
 docker-compose up --build
 ```
 
-En local :
+Access the application at:
+
+- Frontend: http://localhost:5173
+- API: http://localhost:3000
+- API Documentation: http://localhost:3000/api/docs
+
+### Kubernetes Deployment
+
+#### Standard Deployment
 
 ```bash
-# Pour lancer le server
+# Initial Minikube setup
+scripts\setup-minikube.bat
+
+# Services deployment
+kubectl apply -f k8s/postgres.yaml
+kubectl apply -f k8s/fixed-server.yaml
+kubectl apply -f k8s/client1.yaml -f k8s/client2.yaml -f k8s/client3.yaml
+
+# Access to services
+scripts\port-forward-all.bat
+```
+
+Access the application at:
+
+- Server API: http://localhost:3000
+- Client 1: http://localhost:8081
+- Client 2: http://localhost:8082
+- Client 3: http://localhost:8083
+
+#### Load-Balanced Deployment
+
+```bash
+# Initial Minikube setup
+scripts\setup-minikube.bat
+
+# Services deployment
+kubectl apply -f k8s/postgres.yaml
+kubectl apply -f k8s/fixed-server.yaml
+kubectl apply -f k8s/client.yaml
+kubectl apply -f k8s/ingress.yaml
+
+# Access to services
+scripts\port-forward-all.bat
+```
+
+Access the application at:
+
+- Main application: http://localhost:8080
+- Direct server API: http://localhost:3000
+
+For more information on Kubernetes deployment, check the [k8s/README.md](k8s/README.md) file.
+
+### Local Development
+
+```bash
+# To run the server
 cd server
 npm run start
 ```
 
 ```bash
-# Pour lancer l'application web
+# To run the web application
 cd client
 npm run dev
 ```
 
-## Injection de données par défaut
+## Load Balancing
 
-Pour avoir des données par défaut :
+The application implements load balancing using Kubernetes native capabilities.
+
+### Architecture
+
+``` text
+                                  ┌──────────────┐
+                                  │              │
+                               ┌──┤  Server Pod 1│
+                               │  │              │
+┌──────────────┐  ┌─────────┐  │  └──────────────┘
+│              │  │         │  │  ┌──────────────┐
+│  Web Browser ├──┤ Ingress ├──┼──┤              │
+│              │  │         │  │  │  Server Pod 2│
+└──────────────┘  └─────────┘  │  │              │
+                               │  └──────────────┘
+                               │  ┌──────────────┐
+                               │  │              │
+                               └──┤  Server Pod 3│
+                                  │              │
+                                  └──────────────┘
+```
+
+### Implementation Details
+
+1. **Server Deployment**:
+
+   - Scaled to 3 replicas for load distribution
+   - Each pod is identical and stateless
+   - Added pod identification in response headers
+
+2. **Client Deployment**:
+
+   - Single unified deployment with 3 replicas
+   - ClusterIP service for internal access
+
+3. **Ingress Controller**:
+   - NGINX Ingress routes traffic between services
+   - `/api` paths routed to the server service
+   - All other paths routed to the client service
+
+### Testing Load Balancing
+
+Run the load test script to verify load balancing is working:
 
 ```bash
-# Avec Docker
+scripts\test-load-balancing.bat
+```
+
+This will:
+
+1. Check that all server pods are running
+2. Run a k6 load test that makes requests to the API
+3. Track which pod serves each request
+4. Display a summary of the distribution of requests across pods
+
+You can manually verify the load balancing by running this command in multiple terminals:
+
+```bash
+curl -s -I http://localhost:8080/api/v1/products | findstr X-Serving-Pod
+```
+
+## Monitoring
+
+The project integrates Prometheus and Grafana for metrics monitoring:
+
+- **Prometheus**: Collects and stores server metrics
+- **Grafana**: Visualizes metrics in customizable dashboards
+
+### Accessing Monitoring Tools
+
+#### With Docker Compose:
+
+- Prometheus UI: http://localhost:9090
+- Grafana Dashboard: http://localhost:3001 (login: admin/admin)
+
+#### With Kubernetes:
+
+```bash
+# Using the dedicated monitoring script (recommended)
+scripts\port-forward-monitoring.bat
+
+# Or manually for individual services
+# For Prometheus
+kubectl port-forward svc/prometheus 9090:9090
+
+# For Grafana
+kubectl port-forward svc/grafana 3001:3000
+```
+
+### Key Metrics
+
+1. **Request Rate Overview**
+
+   ``` text
+   sum(rate(http_request_duration_seconds_count{app="log430-server"}[1m])) by (path)
+   ```
+
+   Shows the number of requests per second to each endpoint.
+
+2. **Error Rate Overview**
+
+   ``` text
+   sum(rate(http_request_duration_seconds_count{app="log430-server", status_code=~"4.*|5.*"}[1m])) / sum(rate(http_request_duration_seconds_count{app="log430-server"}[1m])) * 100
+   ```
+
+   Shows the percentage of requests resulting in errors.
+
+3. **Response Time Overview**
+
+   ``` text
+   histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app="log430-server"}[1m])) by (path, le))
+   ```
+
+   Shows the 95th percentile response time for each endpoint.
+
+4. **Load Balancing Distribution**
+  
+   ``` text
+   sum by(pod) (rate(requests_total_by_pod[1m]))
+   ```
+
+   Shows how requests are distributed across server pods.
+
+### Monitoring During Load Tests
+
+To monitor application performance during load tests:
+
+1. Start monitoring port forwarding:
+
+   ```bash
+   scripts\port-forward-monitoring.bat
+   ```
+
+2. Run load tests using k6:
+
+   ```bash
+   scripts\run-k6-tests.bat
+   ```
+
+3. View metrics in Prometheus/Grafana
+
+## Data Management
+
+### Default Data Injection
+
+To have default data:
+
+```bash
+# With Docker
 docker-compose exec server npm run seed
 
-# Localement
+# Locally
 cd server
 npm run seed
 ```
 
-## Lancer les tests
+### Database Commands
 
-Tester localement :
-
-```bash
-cd server
-npm test
-```
-
-## Commandes Prisma utiles
-
-Pour réinitialiser migration prisma :
+To reset Prisma migration:
 
 ```bash
 npx prisma migrate reset
 npx prisma migrate dev --name init
 ```
 
-Il faut reseed les données après (à voir plus haut).
+You need to reseed the data afterward.
 
-## Récupérer l'arborescence du projet
+## Testing
 
-Exécuter sur le root du projet
+Testing locally:
+
+```bash
+cd server
+npm test
+```
+
+For load testing:
+
+```bash
+scripts\run-k6-tests.bat
+```
+
+## Project Structure
+
+Execute at the project root to generate the structure:
 
 ```bash
 treee -l 4 --ignore "node_modules,.git" -o docs\structure.txt
 ```
 
-## Arborescene
+## Additional Documentation
 
-```text
-├── client
-│ ├── Dockerfile
-│ ├── eslint.config.js
-│ ├── index.html
-│ ├── package-lock.json
-│ ├── package.json
-│ ├── public
-│ ├── src
-│ │ ├── api
-│ │ │ └── index.js
-│ │ ├── App.jsx
-│ │ ├── assets
-│ │ │ ├── index.css
-│ │ │ └── react.svg
-│ │ ├── components
-│ │ │ ├── Modal.jsx
-│ │ │ ├── Navbar.jsx
-│ │ │ ├── ProductCard.jsx
-│ │ │ ├── ProductEditForm.jsx
-│ │ │ └── ProductList.jsx
-│ │ ├── context
-│ │ │ ├── CartContext.jsx
-│ │ │ └── UserContext.jsx
-│ │ ├── main.jsx
-│ │ └── pages
-│ │ ├── CartPage.jsx
-│ │ ├── Dashboard.jsx
-│ │ ├── Login.jsx
-│ │ ├── MagasinDetail.jsx
-│ │ └── Products.jsx
-│ └── vite.config.js
-├── docker-compose.yml
-├── package-lock.json
-├── package.json
-├── README.md
-└── server
-├── controllers
-│ ├── magasin.controller.js
-│ ├── maisonmere.controller.js
-│ ├── product.controller.js
-│ ├── stock.controller.js
-│ ├── user.controller.js
-│ └── vente.controller.js
-├── dao
-│ ├── magasin.dao.js
-│ ├── produit.dao.js
-│ ├── stock.dao.js
-│ ├── user.dao.js
-│ └── vente.dao.js
-├── Dockerfile
-├── docs
-│ └── magasinapi.yaml
-├── index.js
-├── jest.config.js
-├── middleware
-│ ├── auth.js
-│ ├── errorHandler.js
-│ └── validateRequest.js
-├── package-lock.json
-├── package.json
-├── prisma
-│ └── schema.prisma
-├── routes
-│ ├── magasin.routes.js
-│ ├── maisonmere.routes.js
-│ ├── product.routes.js
-│ ├── stock.routes.js
-│ ├── user.routes.js
-│ └── vente.routes.js
-├── seed.js
-├── server.js
-├── services
-│ └── product.service.js
-└── tests
-├── auth.test.js
-├── basic.test.js
-├── magasin.test.js
-├── product.test.js
-├── setup.js
-├── stock.test.js
-└── ventes.test.js
-
-```
+- [Script files organization (scripts/)](README-scripts.md)
+- [Complete Kubernetes deployment guide](k8s/README.md)

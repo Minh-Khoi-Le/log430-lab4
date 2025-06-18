@@ -17,7 +17,8 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { metricsMiddleware, metricsEndpoint } from './middleware/metrics.js';
+import { metricsMiddleware, metricsEndpoint, podIdentifier } from './middleware/metrics.js';
+import os from 'os';
 
 // Import routes
 import userRoutes from './routes/user.routes.js';
@@ -36,10 +37,14 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Log pod hostname on startup
+console.log(`Starting server on pod: ${os.hostname()}`);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(metricsMiddleware);
+app.use(podIdentifier);  // Add pod identifier to response headers
 metricsEndpoint(app);
 
 // API Documentation Setup
@@ -53,7 +58,7 @@ try {
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('Welcome to LOG430 API');
+  res.send(`Welcome to LOG430 API (served by pod: ${os.hostname()})`);
 });
 
 // API routes
@@ -70,7 +75,7 @@ app.use(errorHandler);
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} (pod: ${os.hostname()})`);
 });
 
 export { app, server, prisma }; 

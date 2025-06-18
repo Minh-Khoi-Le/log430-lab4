@@ -29,3 +29,5 @@ yarn-error.log*
 # OS specific
 .DS_Store
 Thumbs.db
+kubectl.exe
+minikube.exe

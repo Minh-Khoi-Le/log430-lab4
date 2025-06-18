@@ -11,6 +11,8 @@
 import express from 'express';
 import * as controller from '../controllers/stock.controller.js';
 import { auth } from '../middleware/auth.js';
+import { cacheMiddleware } from '../middleware/cache.js';
+import invalidateCache from '../utils/cacheInvalidation.js';
 
 const router = express.Router();
 
@@ -20,7 +22,7 @@ const router = express.Router();
  * Get stock information for a specific product across all stores.
  * 
  */
-router.get('/product/:productId', controller.getByProduct);
+router.get('/product/:productId', cacheMiddleware(300), controller.getByProduct);
 
 /**
  * GET /api/v1/stock/store/:storeId
@@ -28,7 +30,7 @@ router.get('/product/:productId', controller.getByProduct);
  * Get stock information for all products in a specific store.
  * 
  */
-router.get('/store/:storeId', controller.getByStore);
+router.get('/store/:storeId', cacheMiddleware(300), controller.getByStore);
 
 /**
  * PUT /api/v1/stock/product/:productId
@@ -36,6 +38,14 @@ router.get('/store/:storeId', controller.getByStore);
  * Update stock quantity for a specific product in a specific store.
  * Requires authentication with gestionnaire role.
  */
-router.put('/product/:productId', auth, controller.updateStock);
+router.put('/product/:productId', auth, async (req, res, next) => {
+  try {
+    await controller.updateStock(req, res, next);
+    // Invalidate both product and stock related caches
+    await invalidateCache.stock();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router; 

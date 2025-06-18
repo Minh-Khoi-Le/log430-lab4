@@ -14,6 +14,8 @@ import { body, param, query } from 'express-validator';
 import * as controller from '../controllers/product.controller.js';
 import { auth } from '../middleware/auth.js';
 import { validateRequest } from '../middleware/validateRequest.js';
+import { cacheMiddleware } from '../middleware/cache.js';
+import invalidateCache from '../utils/cacheInvalidation.js';
 
 const router = express.Router();
 
@@ -32,6 +34,7 @@ router.get('/',
   query('size').optional().isInt({ min: 1, max: 100 }).toInt(),
   query('sort').optional().isString(),
   validateRequest,
+  cacheMiddleware(300), // Cache for 5 minutes
   controller.list
 );
 
@@ -48,6 +51,7 @@ router.get('/',
 router.get('/:id',
   param('id').isInt({ min: 1 }),
   validateRequest,
+  cacheMiddleware(300), // Cache for 5 minutes
   controller.get
 );
 
@@ -65,7 +69,15 @@ router.post('/',
   body('price').isFloat({ min: 0 }),
   body('description').optional().isString().trim(),
   validateRequest,
-  controller.create
+  async (req, res, next) => {
+    try {
+      await controller.create(req, res, next);
+      // Invalidate relevant caches after successful creation
+      await invalidateCache.products();
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
 /**
@@ -83,7 +95,15 @@ router.put('/:id',
   body('price').optional().isFloat({ min: 0 }),
   body('description').optional().isString().trim(),
   validateRequest,
-  controller.update
+  async (req, res, next) => {
+    try {
+      await controller.update(req, res, next);
+      // Invalidate relevant caches after successful update
+      await invalidateCache.products();
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
 /**
@@ -97,7 +117,15 @@ router.delete('/:id',
   auth,
   param('id').isInt({ min: 1 }),
   validateRequest,
-  controller.remove
+  async (req, res, next) => {
+    try {
+      await controller.remove(req, res, next);
+      // Invalidate relevant caches after successful deletion
+      await invalidateCache.products();
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
 export default router; 

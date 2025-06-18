@@ -5,6 +5,7 @@ This directory contains the Kubernetes manifests for deploying the LOG430 applic
 ## Components
 
 - **PostgreSQL Database**: Deployed with a persistent volume
+- **Redis**: Cache server for improved performance
 - **Server**: Node.js backend service with automatic database seeding
 - **Clients**: Three frontend instances accessible via different NodePorts
 
@@ -16,16 +17,23 @@ This directory contains the Kubernetes manifests for deploying the LOG430 applic
    minikube start --driver=docker
    ```
 
-2. Build Docker images:
+2. Choose one of the automated deployment scripts:
+
+   ```bash
+   # For deployment with load balancing
+   scripts\deploy-with-loadbalancing.bat
+
+   # For deployment without load balancing (fixed server)
+   scripts\deploy-fixed-server.bat
+   ```
+
+   Or build and deploy manually:
 
    ```bash
    scripts\setup-minikube.bat
-   ```
 
-3. Apply Kubernetes configurations:
-
-   ```bash
    kubectl apply -f k8s/postgres.yaml
+   kubectl apply -f k8s/redis.yaml
    kubectl apply -f k8s/fixed-server.yaml
    kubectl apply -f k8s/client1.yaml -f k8s/client2.yaml -f k8s/client3.yaml
    ```
@@ -49,10 +57,14 @@ The project includes several helpful scripts in the `scripts` directory:
 | Script                     | Description                                                  |
 | -------------------------- | ------------------------------------------------------------ |
 | `setup-minikube.bat`       | Sets up Minikube environment and builds Docker images        |
+| `deploy-with-loadbalancing.bat` | Deploys the application with load balancing using ingress |
+| `deploy-fixed-server.bat`  | Deploys the application without load balancing (fixed server) |
+| `cleanup-k8s.bat`          | Removes all deployed Kubernetes resources                    |
 | `redeploy.bat`             | Rebuilds Docker images and restarts all deployments          |
 | `port-forward-all.bat`     | Sets up port forwarding for all services in separate windows |
 | `port-forward-monitoring.bat` | Sets up port forwarding for Prometheus and Grafana only   |
 | `test-load-balancing.bat`  | Tests the load balancing implementation                      |
+| `test-cache-performance.bat` | Tests Redis caching performance                             |
 
 ## Database Seeding
 
@@ -105,9 +117,9 @@ minikube ip
 
 Then visit:
 
-- Client 1: http://<minikube-ip>:30001
-- Client 2: http://<minikube-ip>:30002
-- Client 3: http://<minikube-ip>:30003
+- Client 1: <http://minikube-ip:30001>
+- Client 2: <http://minikube-ip:30002>
+- Client 3: <http://minikube-ip:30003>
 
 ## Troubleshooting
 
@@ -124,20 +136,6 @@ kubectl logs <pod-name>
 kubectl logs <pod-name> --tail=50
 ```
 
-## Updating After Code Changes
-
-After making code changes, simply run:
-
-```bash
-scripts\redeploy.bat
-```
-
-This will:
-
-1. Rebuild the Docker images with your changes
-2. Restart the deployments to pick up the new images
-3. Show the status of your pods
-
 ## Stopping the Cluster
 
 To stop the Kubernetes cluster:
@@ -151,3 +149,24 @@ To delete the cluster:
 ```bash
 minikube delete
 ```
+
+## Redis Caching
+
+The application uses Redis for API response caching to improve performance:
+
+1. **Caching Configuration**:
+   - Redis service is deployed with the `redis.yaml` manifest
+   - Server is configured to connect to Redis via environment variables
+
+2. **Testing Caching**:
+   To verify the caching is working correctly:
+
+   ```bash
+   scripts\test-cache-performance.bat
+   ```
+
+   This will show request times for cached vs. non-cached requests.
+
+3. **Monitoring Cache Performance**:
+   - Redis cache hits/misses are available in Prometheus metrics
+   - Cache statistics are available through Grafana dashboards

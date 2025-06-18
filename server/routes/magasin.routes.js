@@ -11,6 +11,8 @@
 
 import express from 'express';
 import * as controller from '../controllers/magasin.controller.js';
+import { cacheMiddleware } from '../middleware/cache.js';
+import invalidateCache from '../utils/cacheInvalidation.js';
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ const router = express.Router();
  * Used by:
  * - Admin Dashboard to view all stores
  */
-router.get('/', controller.list);
+router.get('/', cacheMiddleware(300), controller.list);
 
 /**
  * GET /api/v1/stores/:id
@@ -36,7 +38,7 @@ router.get('/', controller.list);
  * - Store detail pages
  * - Store management interfaces
  */
-router.get('/:id', controller.get);
+router.get('/:id', cacheMiddleware(300), controller.get);
 
 /**
  * POST /api/v1/stores
@@ -50,7 +52,14 @@ router.get('/:id', controller.get);
  * Used by:
  * - Admin dashboard for store management
  */
-router.post('/', controller.create);
+router.post('/', async (req, res, next) => {
+  try {
+    await controller.create(req, res, next);
+    await invalidateCache.stores();
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * PUT /api/v1/stores/:id
@@ -68,7 +77,14 @@ router.post('/', controller.create);
  * - Admin dashboard for store management
  * - Parent company (maisonmere) to update store information
  */
-router.put('/:id', controller.update);
+router.put('/:id', async (req, res, next) => {
+  try {
+    await controller.update(req, res, next);
+    await invalidateCache.stores();
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * DELETE /api/v1/stores/:id
@@ -82,7 +98,14 @@ router.put('/:id', controller.update);
  * - Admin interfaces for store management
  * - Parent company (maisonmere) to remove closed stores
  */
-router.delete('/:id', controller.remove);
+router.delete('/:id', async (req, res, next) => {
+  try {
+    await controller.remove(req, res, next);
+    await invalidateCache.stores();
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * GET /api/v1/stores/:magasinId/stock
@@ -97,7 +120,7 @@ router.delete('/:id', controller.remove);
  * - Inventory management interfaces
  * - Sales interfaces to check product availability
  */
-router.get('/:magasinId/stock', controller.stock);
+router.get('/:magasinId/stock', cacheMiddleware(300), controller.stock);
 
 
 export default router;

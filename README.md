@@ -6,17 +6,20 @@
   - [Table of Contents](#table-of-contents)
   - [Description](#description)
   - [Technical Choices](#technical-choices)
-  - [Setup and Deployment](#setup-and-deployment)
+  - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
-    - [Docker Compose Deployment](#docker-compose-deployment)
-    - [Kubernetes Deployment](#kubernetes-deployment)
-      - [Standard Deployment](#standard-deployment)
-      - [Load-Balanced Deployment](#load-balanced-deployment)
-    - [Local Development](#local-development)
+    - [Docker Compose (Simplest)](#docker-compose-simplest)
+    - [Kubernetes with Load Balancing](#kubernetes-with-load-balancing)
+    - [Kubernetes without Load Balancing](#kubernetes-without-load-balancing)
+    - [Testing and Monitoring](#testing-and-monitoring)
+  - [Local Development](#local-development)
   - [Load Balancing](#load-balancing)
     - [Architecture](#architecture)
     - [Implementation Details](#implementation-details)
     - [Testing Load Balancing](#testing-load-balancing)
+  - [Caching](#caching)
+    - [Redis Implementation](#redis-implementation)
+    - [Cached Endpoints](#cached-endpoints)
   - [Monitoring](#monitoring)
     - [Accessing Monitoring Tools](#accessing-monitoring-tools)
       - [With Docker Compose:](#with-docker-compose)
@@ -47,11 +50,13 @@ Backend: Express (Node.js 20)
 
 Persistence: Prisma ORM / PostgreSQL
 
+Caching: Redis for API response caching
+
 Containerization: Docker Compose (client/server/db)
 
 Orchestration: Kubernetes with Minikube
 
-## Setup and Deployment
+## Quick Start
 
 ### Prerequisites
 
@@ -59,68 +64,106 @@ Orchestration: Kubernetes with Minikube
 - (Optional) Node.js 18+ to run locally outside Docker
 - For Kubernetes: Minikube and kubectl installed
 
-### Docker Compose Deployment
+### Docker Compose (Simplest)
 
-The simplest way to run the application:
+1. Start the application with Docker Compose:
 
-```bash
-docker-compose up --build
-```
+   ```bash
+   docker-compose up --build
+   ```
 
-Access the application at:
+2. Access the application:
+   - Frontend: http://localhost:5173
+   - API: http://localhost:3000
+   - API Documentation: http://localhost:3000/api/docs
 
-- Frontend: http://localhost:5173
-- API: http://localhost:3000
-- API Documentation: http://localhost:3000/api/docs
+### Kubernetes with Load Balancing
 
-### Kubernetes Deployment
+1. Start Minikube (if not already running):
 
-#### Standard Deployment
+   ```bash
+   minikube start --driver=docker
+   ```
 
-```bash
-# Initial Minikube setup
-scripts\setup-minikube.bat
+2. Deploy the full stack with load balancing:
 
-# Services deployment
-kubectl apply -f k8s/postgres.yaml
-kubectl apply -f k8s/fixed-server.yaml
-kubectl apply -f k8s/client1.yaml -f k8s/client2.yaml -f k8s/client3.yaml
+   ```bash
+   scripts\deploy-with-loadbalancing.bat
+   ```
 
-# Access to services
-scripts\port-forward-all.bat
-```
+3. Set up port forwarding to access the services:
 
-Access the application at:
+   ```bash
+   scripts\port-forward-all.bat
+   ```
 
-- Server API: http://localhost:3000
-- Client 1: http://localhost:8081
-- Client 2: http://localhost:8082
-- Client 3: http://localhost:8083
+4. Access the application:
+   - Main App: http://localhost:8080
+   - Direct API: http://localhost:8080/api
 
-#### Load-Balanced Deployment
+### Kubernetes without Load Balancing
 
-```bash
-# Initial Minikube setup
-scripts\setup-minikube.bat
+1. Start Minikube (if not already running):
 
-# Services deployment
-kubectl apply -f k8s/postgres.yaml
-kubectl apply -f k8s/fixed-server.yaml
-kubectl apply -f k8s/client.yaml
-kubectl apply -f k8s/ingress.yaml
+   ```bash
+   minikube start --driver=docker
+   ```
 
-# Access to services
-scripts\port-forward-all.bat
-```
+2. Deploy the full stack with separate clients:
 
-Access the application at:
+   ```bash
+   scripts\deploy-fixed-server.bat
+   ```
 
-- Main application: http://localhost:8080
-- Direct server API: http://localhost:3000
+3. Set up port forwarding to access the services:
 
-For more information on Kubernetes deployment, check the [k8s/README.md](k8s/README.md) file.
+   ```bash
+   scripts\port-forward-all.bat
+   ```
 
-### Local Development
+4. Access the application:
+   - Server API: http://localhost:3000
+   - Client 1: http://localhost:8081
+   - Client 2: http://localhost:8082
+   - Client 3: http://localhost:8083
+
+### Testing and Monitoring
+
+1. Set up monitoring port forwarding:
+
+   ```bash
+   scripts\port-forward-monitoring.bat
+   ```
+
+2. Access monitoring tools:
+
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3001 (login: admin/admin)
+
+3. Test caching performance:
+
+   ```bash
+   scripts\test-cache-performance.bat
+   ```
+
+4. Test load balancing:
+
+   ```bash
+   scripts\test-load-balancing.bat
+   ```
+
+5. Run k6 load tests:
+
+   ```bash
+   scripts\run-k6-tests.bat
+   ```
+
+6. Clean up all Kubernetes resources:
+   ```bash
+   scripts\cleanup-k8s.bat
+   ```
+
+## Local Development
 
 ```bash
 # To run the server
@@ -140,7 +183,7 @@ The application implements load balancing using Kubernetes native capabilities.
 
 ### Architecture
 
-``` text
+```text
                                   ┌──────────────┐
                                   │              │
                                ┌──┤  Server Pod 1│
@@ -197,6 +240,30 @@ You can manually verify the load balancing by running this command in multiple t
 curl -s -I http://localhost:8080/api/v1/products | findstr X-Serving-Pod
 ```
 
+## Caching
+
+The application implements Redis caching to improve performance and reduce database load.
+
+### Redis Implementation
+
+Redis is used for caching API responses from critical endpoints. Key features include:
+
+- Read-through caching for GET requests
+- Automatic cache invalidation after data changes
+- Configurable TTL (Time-To-Live) for cached data
+- Docker and Kubernetes ready configuration
+
+### Cached Endpoints
+
+The following endpoint categories use Redis caching:
+
+- **Products**: List and detail views
+- **Stores**: Store information and inventory
+- **Stock**: Product stock levels
+- **Sales**: Sales history and reporting
+
+For more details about caching implementation, see [Caching Documentation](docs/CACHING.md).
+
 ## Monitoring
 
 The project integrates Prometheus and Grafana for metrics monitoring:
@@ -229,7 +296,7 @@ kubectl port-forward svc/grafana 3001:3000
 
 1. **Request Rate Overview**
 
-   ``` text
+   ```text
    sum(rate(http_request_duration_seconds_count{app="log430-server"}[1m])) by (path)
    ```
 
@@ -237,7 +304,7 @@ kubectl port-forward svc/grafana 3001:3000
 
 2. **Error Rate Overview**
 
-   ``` text
+   ```text
    sum(rate(http_request_duration_seconds_count{app="log430-server", status_code=~"4.*|5.*"}[1m])) / sum(rate(http_request_duration_seconds_count{app="log430-server"}[1m])) * 100
    ```
 
@@ -245,15 +312,15 @@ kubectl port-forward svc/grafana 3001:3000
 
 3. **Response Time Overview**
 
-   ``` text
+   ```text
    histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app="log430-server"}[1m])) by (path, le))
    ```
 
    Shows the 95th percentile response time for each endpoint.
 
 4. **Load Balancing Distribution**
-  
-   ``` text
+
+   ```text
    sum by(pod) (rate(requests_total_by_pod[1m]))
    ```
 
@@ -279,6 +346,9 @@ To monitor application performance during load tests:
 
 ## Data Management
 
+The server deployment automatically seeds the database on startup if
+deploying with Kubernetes.
+
 ### Default Data Injection
 
 To have default data:
@@ -301,7 +371,7 @@ npx prisma migrate reset
 npx prisma migrate dev --name init
 ```
 
-You need to reseed the data afterward.
+You need to reseed the data afterward for local developpment.
 
 ## Testing
 
@@ -330,3 +400,5 @@ treee -l 4 --ignore "node_modules,.git" -o docs\structure.txt
 
 - [Script files organization (scripts/)](README-scripts.md)
 - [Complete Kubernetes deployment guide](k8s/README.md)
+- [Redis caching implementation](docs/CACHING.md)
+- [Command Reference](docs/COMMAND-REFERENCE.md)

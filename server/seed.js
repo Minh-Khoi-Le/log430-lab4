@@ -35,73 +35,105 @@ function getRandomInt(min, max) {
 }
 
 async function main() {
-  // Delete all data in the database
-  await prisma.ligneVente?.deleteMany?.();
-  await prisma.vente?.deleteMany?.();
-  await prisma.stock?.deleteMany?.();
-  await prisma.magasin.deleteMany({});
-  await prisma.product.deleteMany({});
-  await prisma.user?.deleteMany?.();
+  try {
+    console.log("Starting database cleanup...");
+    
+    // Delete all data in the correct order based on schema relationships
+    // 1. Delete Refund_ligne (child of Refund)
+    await prisma.refund_ligne.deleteMany({});
+    console.log("Deleted refund_ligne records");
+    
+    // 2. Delete Vente_ligne (child of Vente)
+    await prisma.vente_ligne.deleteMany({});
+    console.log("Deleted vente_ligne records");
+    
+    // 3. Delete Refund (dependent on Vente, Magasin, User)
+    await prisma.refund.deleteMany({});
+    console.log("Deleted refund records");
+    
+    // 4. Delete Vente (dependent on Magasin, User)
+    await prisma.vente.deleteMany({});
+    console.log("Deleted vente records");
+    
+    // 5. Delete Stock (dependent on Magasin, Product)
+    await prisma.stock.deleteMany({});
+    console.log("Deleted stock records");
+    
+    // 6. Delete parent tables
+    await prisma.magasin.deleteMany({});
+    console.log("Deleted magasin records");
+    
+    await prisma.product.deleteMany({});
+    console.log("Deleted product records");
+    
+    await prisma.user.deleteMany({});
+    console.log("Deleted user records");
 
-  // Insert products, stores and users
-  await prisma.product.createMany({ data: products });
-  await prisma.magasin.createMany({ data: magasins });
-  await prisma.user.createMany({ data: users });
+    console.log("Database cleanup completed successfully.");
 
-  // Get the products, stores and users inserted
-  const productsList = await prisma.product.findMany();
-  const magasinsList = await prisma.magasin.findMany();
-  const clientsList = await prisma.user.findMany({ where: { role: 'client' } });
+    // Insert products, stores and users
+    await prisma.product.createMany({ data: products });
+    await prisma.magasin.createMany({ data: magasins });
+    await prisma.user.createMany({ data: users });
 
-  // Create stocks for each product X store
-  for (const magasin of magasinsList) {
-    for (const product of productsList) {
-      await prisma.stock.create({
-        data: {
-          productId: product.id,
-          magasinId: magasin.id,
-          quantite: getRandomInt(20, 100) // stock random
-        }
-      });
-    }
-  }
+    // Get the products, stores and users inserted
+    const productsList = await prisma.product.findMany();
+    const magasinsList = await prisma.magasin.findMany();
+    const clientsList = await prisma.user.findMany({ where: { role: 'client' } });
 
-  // Generate random sales for each store
-  for (const magasin of magasinsList) {
-    const nbVentes = getRandomInt(5, 10); // 5 to 10 sales per store
-    for (let v = 0; v < nbVentes; v++) {
-      // Random client among the users with role 'client'
-      const client = clientsList[getRandomInt(0, clientsList.length - 1)];
-      // 1 to 4 different products per sale
-      const productsChoisis = [...productsList]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, getRandomInt(1, 4));
-
-      // Generate sale lines
-      const lignes = productsChoisis.map(product => ({
-        productId: product.id,
-        quantite: getRandomInt(1, 5),
-        prixUnitaire: product.prix
-      }));
-
-      // Calculate the total of the sale
-      const total = lignes.reduce((acc, l) => acc + l.quantite * l.prixUnitaire, 0);
-
-      // Create the sale with its associated lines
-      await prisma.vente.create({
-        data: {
-          magasinId: magasin.id,
-          userId: client.id,
-          total,
-          lignes: {
-            create: lignes
+    // Create stocks for each product X store
+    for (const magasin of magasinsList) {
+      for (const product of productsList) {
+        await prisma.stock.create({
+          data: {
+            productId: product.id,
+            magasinId: magasin.id,
+            quantite: getRandomInt(20, 100) // stock random
           }
-        }
-      });
+        });
+      }
     }
-  }
 
-  console.log("Données seedées (products, magasins, stocks, users, ventes) !");
+    // Generate random sales for each store
+    for (const magasin of magasinsList) {
+      const nbVentes = getRandomInt(5, 10); // 5 to 10 sales per store
+      for (let v = 0; v < nbVentes; v++) {
+        // Random client among the users with role 'client'
+        const client = clientsList[getRandomInt(0, clientsList.length - 1)];
+        // 1 to 4 different products per sale
+        const productsChoisis = [...productsList]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, getRandomInt(1, 4));
+
+        // Generate sale lines
+        const lignes = productsChoisis.map(product => ({
+          productId: product.id,
+          quantite: getRandomInt(1, 5),
+          prixUnitaire: product.prix
+        }));
+
+        // Calculate the total of the sale
+        const total = lignes.reduce((acc, l) => acc + l.quantite * l.prixUnitaire, 0);
+
+        // Create the sale with its associated lines
+        await prisma.vente.create({
+          data: {
+            magasinId: magasin.id,
+            userId: client.id,
+            total,
+            lignes: {
+              create: lignes
+            }
+          }
+        });
+      }
+    }
+
+    console.log("Données seedées (products, magasins, stocks, users, ventes) !");
+  } catch (error) {
+    console.error("Error during seeding:", error);
+    throw error;
+  }
 }
 
 main()

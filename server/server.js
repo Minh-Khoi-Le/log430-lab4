@@ -17,6 +17,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { metricsMiddleware, metricsEndpoint } from './middleware/metrics.js';
 
 // Import routes
 import userRoutes from './routes/user.routes.js';
@@ -38,6 +39,8 @@ const __dirname = path.dirname(__filename);
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
+metricsEndpoint(app);
 
 // API Documentation Setup
 try {

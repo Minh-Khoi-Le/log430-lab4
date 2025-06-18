@@ -7,6 +7,7 @@
 
 import * as service from '../services/product.service.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { productOperations } from '../middleware/metrics.js';
 
 /**
  * List Products Controller
@@ -21,8 +22,10 @@ export async function list(req, res, next) {
   try {
     const { page = 1, size = 10, sort } = req.query;
     const products = await service.list({ page, size, sort });
+    productOperations.labels('list', 'success').inc();
     res.json(products);
   } catch (error) {
+    productOperations.labels('list', 'error').inc();
     next(error);
   }
 }
@@ -40,10 +43,15 @@ export async function get(req, res, next) {
   try {
     const product = await service.get(req.params.id);
     if (!product) {
+      productOperations.labels('get', 'not_found').inc();
       throw new ApiError(404, 'Product not found');
     }
+    productOperations.labels('get', 'success').inc();
     res.json(product);
   } catch (error) {
+    if (error.status !== 404) {
+      productOperations.labels('get', 'error').inc();
+    }
     next(error);
   }
 }
@@ -61,8 +69,10 @@ export async function get(req, res, next) {
 export async function create(req, res, next) {
   try {
     const product = await service.create(req.body);
+    productOperations.labels('create', 'success').inc();
     res.status(201).json(product);
   } catch (error) {
+    productOperations.labels('create', 'error').inc();
     next(error);
   }
 }
@@ -80,10 +90,15 @@ export async function update(req, res, next) {
   try {
     const product = await service.update(req.params.id, req.body);
     if (!product) {
+      productOperations.labels('update', 'not_found').inc();
       throw new ApiError(404, 'Product not found');
     }
+    productOperations.labels('update', 'success').inc();
     res.json(product);
   } catch (error) {
+    if (error.status !== 404) {
+      productOperations.labels('update', 'error').inc();
+    }
     next(error);
   }
 }
@@ -101,14 +116,20 @@ export async function remove(req, res, next) {
   try {
     const success = await service.remove(req.params.id);
     if (!success) {
+      productOperations.labels('delete', 'not_found').inc();
       throw new ApiError(404, 'Product not found');
     }
+    productOperations.labels('delete', 'success').inc();
     res.sendStatus(204);
   } catch (error) {
     // Check for foreign key constraint error
     if (error.code === 'P2003' || error.code === 'P2014') {
+      productOperations.labels('delete', 'conflict').inc();
       // Convert DB error to API error with 409 Conflict status
       next(new ApiError(409, 'Cannot delete product: it is referenced in stock or sales records'));
+    } else if (error.status !== 404) {
+      productOperations.labels('delete', 'error').inc();
+      next(error);
     } else {
       next(error);
     }

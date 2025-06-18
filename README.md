@@ -32,6 +32,17 @@ Conteneurisation : Docker Compose (client/server/db)
 
 ---
 
+### Monitoring
+
+Le projet intègre Prometheus et Grafana pour la surveillance des métriques:
+
+- **Prometheus**: Collecte et stocke les métriques du serveur (http://localhost:9090)
+- **Grafana**: Visualise les métriques (http://localhost:3001, login: admin/admin)
+
+Pour plus d'informations sur la configuration et l'utilisation, consultez le fichier [monitoring-README.md](monitoring-README.md).
+
+---
+
 ### 2. **Lancer l'application complète**
 
 Avec Docker :

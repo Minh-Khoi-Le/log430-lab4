@@ -29,9 +29,10 @@ router.get("/products", async (req, res) => {
     const products = await ProductDAO.getAll();
     res.json(products);
   } catch (err) {
+    console.error("Error retrieving products:", err);
     res
       .status(500)
-      .json({ error: "Error retrieving products" });
+      .json({ error: "Error retrieving products", details: err.message });
   }
 });
 

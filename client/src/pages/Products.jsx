@@ -44,13 +44,24 @@ const Products = () => {
    */
   const fetchProducts = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/v1/products");
-      if (!response.ok)          throw new Error("Error loading products");
+      const response = await fetch("http://localhost:3000/api/v1/maisonmere/products", {
+        headers: {
+          "Authorization": `Bearer ${user.token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("You are not authorized to view products. Please log in again.");
+        }
+        throw new Error("Error loading products");
+      }
+      
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error("Erreur:", error);
-      setError("Error loading products");
+      setError(error.message || "Error loading products");
     }
   };
 
@@ -188,7 +199,7 @@ const Products = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${user.token || 'dummy-token'}`
+          "Authorization": `Bearer ${user.token}`
         },
         body: JSON.stringify({
           name: newProduct.name,

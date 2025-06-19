@@ -79,10 +79,11 @@ function Login() {
           throw new Error("Login failed");
         }
         
-        // Get the token from headers if available
-        const token = res.headers.get('Authorization')?.split(' ')[1] || 
-                      // Fallback to a dummy token for development
-                      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicm9sZSI6Imdlc3Rpb25uYWlyZSIsIm5vbSI6IkciLCJpYXQiOjE2ODcyODk2NzIsImV4cCI6MTY4NzI5MzI3Mn0.C1qig9Ut5-9HNpIaTGN1RUxnkb9Pd3bHm_NbvwUUwZQ';
+        // Get the token from headers
+        const token = res.headers.get('Authorization')?.split(' ')[1];
+        if (!token) {
+          throw new Error("No authentication token received");
+        }
         
         return res.json().then(userData => ({ userData, token }));
       })
@@ -99,7 +100,7 @@ function Login() {
           id: userData.id,
           role: userData.role,
           name: userData.name,
-          token: token, // Store the token in user context
+          token: token,
           storeId: userData.role === "client" ? parseInt(storeId) : null,
           storeName:
             userData.role === "client"

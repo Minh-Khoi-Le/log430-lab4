@@ -41,7 +41,9 @@ const __dirname = path.dirname(__filename);
 console.log(`Starting server on pod: ${os.hostname()}`);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['Authorization']
+}));
 app.use(express.json());
 app.use(metricsMiddleware);
 app.use(podIdentifier);  // Add pod identifier to response headers

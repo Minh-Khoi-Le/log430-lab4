@@ -71,12 +71,32 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
   const fetchStockData = async (productId) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/v1/stock/product/${productId}`);
-      if (response.ok) {
-        const stockData = await response.json();
-        setStocks(stockData);
+      
+      // First fetch all stores to ensure we have stock entries for each
+      const storesResponse = await fetch('http://localhost:3000/api/v1/stores');
+      if (!storesResponse.ok) {
+        throw new Error('Failed to fetch stores');
+      }
+      const stores = await storesResponse.json();
+      
+      // Then fetch current stock data
+      const stockResponse = await fetch(`http://localhost:3000/api/v1/stocks/product/${productId}`);
+      if (!stockResponse.ok) {
+        throw new Error('Failed to fetch stock data');
+      }
+      const stockData = await stockResponse.json();
+      
+      // If we have no stock data, initialize with 0 quantity for each store
+      if (stockData.length === 0) {
+        const initialStocks = stores.map(store => ({
+          id: `temp_${store.id}`,
+          storeId: store.id,
+          store: store,
+          quantity: 0
+        }));
+        setStocks(initialStocks);
       } else {
-        console.error("Failed to fetch stock data");
+        setStocks(stockData);
       }
     } catch (error) {
       console.error("Error fetching stock data:", error);
@@ -128,15 +148,15 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
       
       // Save stock changes for each store
       const promises = stocks.map(stock => 
-        fetch(`http://localhost:3000/api/v1/stock/product/${product.id}`, {
+        fetch(`http://localhost:3000/api/v1/stocks/product/${product.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${user.token || 'dummy-token'}`
+            'Authorization': `Bearer ${user.token}`
           },
           body: JSON.stringify({
             storeId: stock.storeId,
-            quantity: stock.quantity
+            quantity: stock.quantity || 0
           })
         })
       );
@@ -145,7 +165,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
       setSaveSuccess(true);
       
       // Refresh stock data
-      fetchStockData(product.id);
+      await fetchStockData(product.id);
     } catch (error) {
       console.error("Error saving stock changes:", error);
     } finally {

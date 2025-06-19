@@ -3,6 +3,20 @@ const prisma = new PrismaClient();
 
 const ProductDAO = {
   /**
+   * Get All Products
+   * 
+   * Retrieves all products with their stock information.
+   * Used by the maison mère interface.
+   * 
+   * @returns {Promise<Array>} - Promise resolving to array of products with their stock information
+   */
+  getAll: async () => {
+    return prisma.product.findMany({
+      include: { stocks: true }
+    });
+  },
+
+  /**
    * Find All Products
    * 
    * Retrieves a paginated and optionally sorted list of products.

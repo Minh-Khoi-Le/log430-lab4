@@ -105,7 +105,7 @@ const Dashboard = () => {
   // Generate sales report
   const handleGenerateReport = async () => {
     if (!startDate || !endDate) {
-      setError("Veuillez sélectionner une période valide");
+      setError("Please select a valid time span");
       return;
     }
     
@@ -118,14 +118,14 @@ const Dashboard = () => {
       );
       
       if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des données");
+        throw new Error("Error retrieving data");
       }
       
       const data = await response.json();
       setReportData(data);
       setPage(0);
     } catch (err) {
-      setError(err.message || "Une erreur est survenue");
+      setError(err.message || "An error has occured");
     } finally {
       setLoading(false);
     }
@@ -160,8 +160,8 @@ const Dashboard = () => {
             }}
           >
             <StoreIcon sx={{ mr: 1, fontSize: 38, color: "#3a8bff", verticalAlign: "middle" }} />
-            Tableau de bord —{" "}
-            <span style={{ color: "#3a8bff" }}>Maison Mère</span>
+            Dashboard —{" "}
+            <span style={{ color: "#3a8bff" }}>Main Store</span>
           </Typography>
           
           <Button 
@@ -170,7 +170,7 @@ const Dashboard = () => {
             startIcon={<AssessmentIcon />}
             onClick={handleOpenReportDialog}
           >
-            Générer un rapport
+            Generate report
           </Button>
         </Box>
         
@@ -181,22 +181,22 @@ const Dashboard = () => {
             <TableHead>
               <TableRow sx={{ background: "#f7f8fa" }}>
                 <TableCell>
-                  <b>Magasin</b>
+                  <b>Store</b>
                 </TableCell>
                 <TableCell align="right">
-                  <b>Ventes totales</b>
+                  <b>Total sales</b>
                 </TableCell>
                 <TableCell align="right">
-                  <b>Remboursements</b>
+                  <b>Refunds</b>
                 </TableCell>
                 <TableCell align="right">
-                  <b>Ventes actives</b>
+                  <b>Sales</b>
                 </TableCell>
                 <TableCell align="right">
-                  <b>Produits vendus</b>
+                  <b>Saled products</b>
                 </TableCell>
                 <TableCell align="right">
-                  <b>Chiffre d'affaires</b>
+                  <b>Profit</b>
                 </TableCell>
                 <TableCell align="center">
                   <b>Actions</b>
@@ -238,7 +238,7 @@ const Dashboard = () => {
               {stats && stats.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    Aucune donnée à afficher.
+                    No data to show
                   </TableCell>
                 </TableRow>
               )}

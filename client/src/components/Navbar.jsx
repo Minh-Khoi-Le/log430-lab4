@@ -33,7 +33,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 function Navbar() {
   const { cart } = useCart();
   const { user, setUser } = useUser();
-  const [magasins, setMagasins] = useState([]);
+  const [stores, setStores] = useState([]);
   // Calculate total items in cart for badge display
   const totalItems = cart.reduce((acc, item) => acc + item.quantite, 0);
   const location = useLocation();
@@ -47,8 +47,8 @@ function Navbar() {
     if (user?.role === "client") {
       fetch("http://localhost:3000/api/v1/stores")
         .then((res) => res.json())
-        .then((data) => setMagasins(data))
-        .catch(() => setMagasins([]));
+        .then((data) => setStores(data))
+        .catch(() => setStores([]));
     }
   }, [user]);
 
@@ -87,14 +87,14 @@ function Navbar() {
           <ListItemIcon>
             <StoreIcon fontSize="small" />
           </ListItemIcon>
-          Changer de magasin
+          Change Store
         </MenuItem>
       );
       
       menuItems.push(<Divider key="divider-1" />);
       
       // Add store options
-      magasins.forEach(magasin => {
+      stores.forEach(magasin => {
         menuItems.push(
           <MenuItem
             key={`store-${magasin.id}`}
@@ -116,7 +116,7 @@ function Navbar() {
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>
-        Déconnexion
+        Logout
       </MenuItem>
     );
     
@@ -130,7 +130,7 @@ function Navbar() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
           {/* Application title */}
           <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 1 }}>
-            LOG430 Magasin
+            LOG430 Store
           </Typography>
           
           {/* Products link - available to all users */}
@@ -173,7 +173,7 @@ function Navbar() {
               <Badge badgeContent={totalItems} color="primary" sx={{ marginRight: 1 }}>
                 <ShoppingCartIcon sx={{ color: "#fff" }} />
               </Badge>
-              Mon panier
+              My Cart
             </Link>
           )}
           
@@ -185,7 +185,7 @@ function Navbar() {
               textDecoration: "none",
               fontWeight: 500
             }}>
-              Historique
+              History
             </Link>
           )}
         </Box>
@@ -195,7 +195,7 @@ function Navbar() {
           {/* Display username if logged in */}
           {user?.nom && (
             <Typography variant="body1" sx={{ color: "#fff", marginRight: 2, fontSize: 16 }}>
-              Utilisateur: <b>{user.nom}</b>
+              User: <b>{user.nom}</b>
             </Typography>
           )}
           

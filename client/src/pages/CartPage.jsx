@@ -65,8 +65,8 @@ const CartPage = () => {
         setErrorMsg(data.error);
       }
     } catch (err) {
-      console.error("Erreur lors de la confirmation de l'achat :", err);
-      setErrorMsg("Erreur réseau ou serveur.");
+      console.error("Error confirming purchase:", err);
+      setErrorMsg("Network or server error.");
       setLoading(false);
     }
   };
@@ -100,11 +100,11 @@ const CartPage = () => {
           marginBottom: 28,
           color: "#223"
         }}
-      >Votre panier</h2>
+      >Your Cart</h2>
       
       {/* Empty cart message */}
       {cart.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#888", fontSize: 20, marginTop: 30 }}>Le panier est vide.</div>
+        <div style={{ textAlign: "center", color: "#888", fontSize: 20, marginTop: 30 }}>Cart is empty.</div>
       ) : (
         <>
           {/* Cart item list */}
@@ -169,7 +169,7 @@ const CartPage = () => {
                   onClick={() => removeFromCart(item.product.id)}
                   disabled={loading}
                 >
-                  Retirer
+                  Remove
                 </button>
               </li>
             ))}
@@ -186,7 +186,7 @@ const CartPage = () => {
               color: "#29306b"
             }}
           >
-            Total : <span style={{ color: "#376dff" }}>${total.toFixed(2)}</span>
+            Total: <span style={{ color: "#376dff" }}>${total.toFixed(2)}</span>
           </div>
           
           {/* Error message display */}
@@ -216,7 +216,7 @@ const CartPage = () => {
             disabled={loading}
             onClick={handleCheckout}
           >
-            {loading ? "Traitement..." : "Confirmer l'achat"}
+            {loading ? "Processing..." : "Confirm Purchase"}
           </button>
         </>
       )}
@@ -224,13 +224,13 @@ const CartPage = () => {
       {/* Receipt Modal */}
       <Modal 
         open={showReceipt} 
-        title="Reçu d'achat" 
+        title="Purchase Receipt" 
         onClose={handleCloseReceipt}
       >
         {receiptData && (
           <div style={{ padding: "0 10px" }}>
             <div style={{ textAlign: "center", margin: "15px 0", color: "#376dff" }}>
-              <h3 style={{ margin: "5px 0" }}>Merci pour votre achat!</h3>
+              <h3 style={{ margin: "5px 0" }}>Thank you for your purchase!</h3>
               <p style={{ fontSize: "14px", color: "#555" }}>
                 Transaction #{receiptData.venteId} • {receiptData.date}
               </p>
@@ -282,7 +282,7 @@ const CartPage = () => {
                 cursor: "pointer"
               }}
             >
-              Fermer
+              Close
             </button>
           </div>
         )}

@@ -163,7 +163,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
     e.preventDefault();
     // Validate required fields
     if (!form.nom || form.prix === "") {
-      alert("Le nom et le prix sont obligatoires !");
+      alert("Name and price are required!");
       return;
     }
     
@@ -190,7 +190,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
             onChange={handleChange}
             style={{ width: "100%", padding: 6 }}
             required
-            placeholder="Nom du produit"
+            placeholder="Product name"
           />
         </label>
       </div>
@@ -225,7 +225,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
               fontFamily: 'inherit',
               resize: 'vertical'
             }}
-            placeholder="Description du produit (optionnel)"
+            placeholder="Product description (optional)"
           />
         </label>
       </div>
@@ -234,7 +234,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
       {!isNewProduct && (
         <div style={{ marginBottom: 18 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Gestion des stocks par magasin
+            Stock Management by Store
           </Typography>
           
           {loading ? (
@@ -243,7 +243,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
             </Box>
           ) : stocks.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Aucun stock disponible pour ce produit
+              No stock available for this product
             </Typography>
           ) : (
             <>
@@ -284,7 +284,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
                   color={saveSuccess ? "success" : "primary"}
                 >
                   {loading ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
-                  {saveSuccess ? "Stocks sauvegardés" : "Sauvegarder les stocks"}
+                  {saveSuccess ? "Stocks saved" : "Save stocks"}
                 </Button>
               </Box>
             </>
@@ -296,16 +296,16 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
       {isNewProduct && (
         <div style={{ marginBottom: 18 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-            Après avoir créé le produit, vous pourrez gérer ses stocks par magasin.
+            After creating the product, you will be able to manage its stock by store.
           </Typography>
         </div>
       )}
       
       {/* Form action buttons */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 18 }}>
-        <button type="button" className="btn" onClick={onCancel}>Annuler</button>
+        <button type="button" className="btn" onClick={onCancel}>Cancel</button>
         <button type="submit" className="btn btn-danger">
-          {isNewProduct ? "Créer le produit" : "Sauvegarder le produit"}
+          {isNewProduct ? "Create Product" : "Save Product"}
         </button>
       </div>
     </form>

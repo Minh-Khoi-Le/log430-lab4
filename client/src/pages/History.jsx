@@ -130,13 +130,13 @@ const History = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors du remboursement");
+        throw new Error(errorData.error || "Error while processing refund");
       }
       
       // Refresh both purchase and refund data
       fetchHistory();
       
-      setSnackbarMessage("Remboursement effectué avec succès");
+      setSnackbarMessage("Refund processed successfully");
       handleCloseRefundDialog();
       
       // Switch to refunds tab to show the new refund
@@ -170,7 +170,7 @@ const History = () => {
       });
       
       if (!purchasesResponse.ok) {
-        throw new Error("Erreur lors du chargement de l'historique");
+        throw new Error("Error loading history");
       }
       
       const purchasesData = await purchasesResponse.json();
@@ -184,7 +184,7 @@ const History = () => {
       });
       
       if (!refundsResponse.ok) {
-        throw new Error("Erreur lors du chargement des remboursements");
+        throw new Error("Error loading refunds");
       }
       
       const refundsData = await refundsResponse.json();
@@ -192,7 +192,7 @@ const History = () => {
       
     } catch (err) {
       console.error("Error fetching history:", err);
-      setError("Impossible de charger votre historique");
+      setError("Unable to load your history");
     } finally {
       setLoading(false);
     }
@@ -210,14 +210,14 @@ const History = () => {
         <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: { xs: 2, md: 0 } }}>
-              Historique
+              History
             </Typography>
             
             {/* Sort controls */}
             {(purchases.length > 0 || refunds.length > 0) && !loading && (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography variant="body2" sx={{ mr: 1 }}>
-                  Trier par date:
+                  Sort by date:
                 </Typography>
                 <ToggleButtonGroup
                   value={sortOrder}
@@ -229,13 +229,13 @@ const History = () => {
                   <ToggleButton value="desc" aria-label="Plus récent d'abord">
                     <KeyboardArrowDownIcon fontSize="small" />
                     <Typography variant="caption" sx={{ ml: 0.5 }}>
-                      Plus récent
+                      Most recent
                     </Typography>
                   </ToggleButton>
                   <ToggleButton value="asc" aria-label="Plus ancien d'abord">
                     <KeyboardArrowUpIcon fontSize="small" />
                     <Typography variant="caption" sx={{ ml: 0.5 }}>
-                      Plus ancien
+                      Oldest
                     </Typography>
                   </ToggleButton>
                 </ToggleButtonGroup>
@@ -253,12 +253,12 @@ const History = () => {
               <Tab 
                 icon={<SellIcon />} 
                 iconPosition="start" 
-                label={`Achats (${purchases.filter(p => p.status === 'active').length})`} 
+                label={`Purchases (${purchases.filter(p => p.status === 'active').length})`} 
               />
               <Tab 
                 icon={<UndoIcon />} 
                 iconPosition="start" 
-                label={`Remboursements (${refunds.length})`} 
+                label={`Refunds (${refunds.length})`} 
               />
             </Tabs>
           </Box>
@@ -283,7 +283,7 @@ const History = () => {
           <>
             {!loading && !error && sortedPurchases.length === 0 && (
               <Alert severity="info" sx={{ mb: 3 }}>
-                Vous n'avez pas encore effectué d'achats.
+                You haven't made any purchases yet.
               </Alert>
             )}
             
@@ -311,10 +311,10 @@ const History = () => {
                     flexWrap: 'wrap'
                   }}>
                     <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                      Commande #{purchase.id}
+                      Order #{purchase.id}
                     </Typography>
                     <Chip 
-                      label={`Total: ${purchase.total.toFixed(2)} €`}
+                      label={`Total: $${purchase.total.toFixed(2)}`}
                       color="primary"
                       icon={<ReceiptIcon />}
                     />
@@ -340,7 +340,7 @@ const History = () => {
                   
                   <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Articles achetés:
+                      Purchased items:
                     </Typography>
                     <List disablePadding>
                       {purchase.lignes.map((ligne) => (
@@ -383,7 +383,7 @@ const History = () => {
                         onClick={() => handleRefundRequest(purchase)}
                         size="small"
                       >
-                        Demander un remboursement
+                        Request refund
                       </Button>
                     </Box>
                   </Box>
@@ -398,7 +398,7 @@ const History = () => {
           <>
             {!loading && !error && sortedRefunds.length === 0 && (
               <Alert severity="info" sx={{ mb: 3 }}>
-                Vous n'avez pas encore effectué de remboursements.
+                You haven't made any refund requests yet.
               </Alert>
             )}
             
@@ -428,14 +428,14 @@ const History = () => {
                   }}>
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                        Remboursement #{refund.id}
+                        Refund #{refund.id}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Pour commande #{refund.vente.id}
+                        For order #{refund.vente.id}
                       </Typography>
                     </Box>
                     <Chip 
-                      label={`Montant: ${refund.total.toFixed(2)} €`}
+                      label={`Amount: $${refund.total.toFixed(2)}`}
                       color="success"
                       icon={<RefundIcon />}
                     />
@@ -460,7 +460,7 @@ const History = () => {
                   {refund.reason && (
                     <Box sx={{ px: 2, py: 1, bgcolor: 'rgba(76, 175, 80, 0.05)' }}>
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Motif:</strong> {refund.reason}
+                        <strong>Reason:</strong> {refund.reason}
                       </Typography>
                     </Box>
                   )}
@@ -469,7 +469,7 @@ const History = () => {
                   
                   <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Articles remboursés:
+                      Refunded items:
                     </Typography>
                     <List disablePadding>
                       {refund.lignes.map((ligne) => (
@@ -514,16 +514,16 @@ const History = () => {
           open={refundDialogOpen}
           onClose={!refundLoading ? handleCloseRefundDialog : undefined}
         >
-          <DialogTitle>Confirmer le remboursement</DialogTitle>
+          <DialogTitle>Confirm refund</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Êtes-vous sûr de vouloir demander un remboursement pour cette commande ?
+              Are you sure you want to request a refund for this order?
               {refundingSale && (
                 <>
                   <br /><br />
                   <strong>Commande #{refundingSale.id}</strong><br />
                   Date: {refundingSale ? formatDate(refundingSale.date) : ''}<br />
-                  Total: {refundingSale?.total.toFixed(2)} €<br />
+                  Total: ${refundingSale?.total.toFixed(2)}<br />
                 </>
               )}
             </DialogContentText>
@@ -531,7 +531,7 @@ const History = () => {
               autoFocus
               margin="dense"
               id="reason"
-              label="Motif du remboursement (optionnel)"
+              label="Reason for refund (optional)"
               fullWidth
               variant="outlined"
               value={refundReason}
@@ -545,7 +545,7 @@ const History = () => {
               onClick={handleCloseRefundDialog}
               disabled={refundLoading}
             >
-              Annuler
+              Cancel
             </Button>
             <Button 
               onClick={handleConfirmRefund}
@@ -554,7 +554,7 @@ const History = () => {
               disabled={refundLoading}
               variant="contained"
             >
-              {refundLoading ? <CircularProgress size={24} /> : "Confirmer le remboursement"}
+              {refundLoading ? <CircularProgress size={24} /> : "Confirm refund"}
             </Button>
           </DialogActions>
         </Dialog>

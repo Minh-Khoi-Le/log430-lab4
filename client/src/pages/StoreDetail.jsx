@@ -1,9 +1,9 @@
 /**
- * Magasin Detail Page
+ * Store Detail Page
  * 
  * This component provides detailed information about a specific store,
  * including stock levels, recent sales, and store management features.
- * Intended for use by gestionnaires
+ * Intended for use by managers
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,7 +12,6 @@ import {
   Box, 
   Paper, 
   Typography, 
-  Grid, 
   Tabs, 
   Tab, 
   Table, 
@@ -21,8 +20,6 @@ import {
   TableContainer, 
   TableHead, 
   TableRow,
-  Card,
-  CardContent,
   Button,
   CircularProgress,
   Divider,
@@ -39,7 +36,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 
-function MagasinDetail() {
+function StoreDetail() {
   const { storeId } = useParams();
   const navigate = useNavigate();
   
@@ -125,7 +122,7 @@ function MagasinDetail() {
             sx={{ ml: 2 }} 
             onClick={() => navigate('/dashboard')}
           >
-            Retour au tableau de bord
+            Back to Dashboard
           </Button>
         </Alert>
       </Box>
@@ -144,7 +141,7 @@ function MagasinDetail() {
         </Box>
         
         <Typography variant="body1" color="text.secondary">
-          {store?.adresse || 'Adresse non spécifiée'}
+          {store?.adresse || 'Address not specified'}
         </Typography>
         
         <Button 
@@ -152,7 +149,7 @@ function MagasinDetail() {
           sx={{ mt: 2 }} 
           onClick={() => navigate('/dashboard')}
         >
-          Retour au tableau de bord
+          Back to Dashboard
         </Button>
       </Paper>
 
@@ -166,7 +163,7 @@ function MagasinDetail() {
           variant="fullWidth"
         >
           <Tab icon={<InventoryIcon />} label="Stock" />
-          <Tab icon={<ReceiptIcon />} label="Ventes récentes" />
+          <Tab icon={<ReceiptIcon />} label="Recent Sales" />
         </Tabs>
       </Paper>
 
@@ -174,21 +171,21 @@ function MagasinDetail() {
       {activeTab === 0 && (
         <Paper elevation={1} sx={{ p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Inventaire du magasin
+            Store Inventory
           </Typography>
           
           {stocks.length === 0 ? (
-            <Alert severity="info">Aucun produit en stock</Alert>
+            <Alert severity="info">No products in stock</Alert>
           ) : (
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                    <TableCell><strong>Produit</strong></TableCell>
+                    <TableCell><strong>Product</strong></TableCell>
                     <TableCell><strong>Description</strong></TableCell>
-                    <TableCell align="right"><strong>Prix</strong></TableCell>
-                    <TableCell align="right"><strong>Quantité</strong></TableCell>
-                    <TableCell align="right"><strong>Valeur totale</strong></TableCell>
+                    <TableCell align="right"><strong>Price</strong></TableCell>
+                    <TableCell align="right"><strong>Quantity</strong></TableCell>
+                    <TableCell align="right"><strong>Total Value</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -221,11 +218,11 @@ function MagasinDetail() {
       {activeTab === 1 && (
         <Paper elevation={1} sx={{ p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Ventes récentes
+            Recent Sales
           </Typography>
           
           {sales.length === 0 ? (
-            <Alert severity="info">Aucune vente récente</Alert>
+            <Alert severity="info">No recent sales</Alert>
           ) : (
             <Stack spacing={2}>
               {sales.map((vente) => (
@@ -251,10 +248,10 @@ function MagasinDetail() {
                     flexWrap: 'wrap'
                   }}>
                     <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                      Vente #{vente.id}
+                      Sale #{vente.id}
                     </Typography>
                     <Chip 
-                      label={`Total: ${vente.total.toFixed(2)} €`}
+                      label={`Total: ${vente.total.toFixed(2)} $`}
                       color="primary"
                       icon={<ReceiptIcon />}
                     />
@@ -271,14 +268,14 @@ function MagasinDetail() {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <PersonIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {vente.user?.nom || 'Client inconnu'}
+                        {vente.user?.nom || 'Unknown Customer'}
                       </Typography>
                     </Box>
 
                     {vente.status && vente.status !== 'active' && (
                       <Chip 
                         size="small"
-                        label={vente.status === 'refunded' ? 'Remboursé' : 'Partiellement remboursé'}
+                        label={vente.status === 'refunded' ? 'Refunded' : 'Partially Refunded'}
                         color={vente.status === 'refunded' ? 'error' : 'warning'}
                         variant="outlined"
                       />
@@ -289,7 +286,7 @@ function MagasinDetail() {
                   
                   <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Articles vendus:
+                      Sold Items:
                     </Typography>
                     <List disablePadding>
                       {vente.lignes.map((ligne) => (
@@ -306,16 +303,16 @@ function MagasinDetail() {
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {ligne.product?.nom || 'Produit inconnu'}
+                                  {ligne.product?.nom || 'Unknown Product'}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {(ligne.quantite * ligne.prixUnitaire).toFixed(2)} €
+                                  ${(ligne.quantite * ligne.prixUnitaire).toFixed(2)}
                                 </Typography>
                               </Box>
                             }
                             secondary={
                               <Typography variant="caption" color="text.secondary">
-                                {ligne.quantite} x {ligne.prixUnitaire.toFixed(2)} €
+                                {ligne.quantite} x ${ligne.prixUnitaire.toFixed(2)}
                               </Typography>
                             }
                           />
@@ -333,4 +330,4 @@ function MagasinDetail() {
   );
 }
 
-export default MagasinDetail; 
+export default StoreDetail;

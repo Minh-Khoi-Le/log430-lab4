@@ -5,7 +5,7 @@ import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
 import CartPage from "./pages/CartPage";
 import History from "./pages/History";
-import MagasinDetail from "./pages/MagasinDetail";
+import StoreDetail from "./pages/StoreDetail";
 import Navbar from "./components/Navbar";
 import { UserProvider, useUser } from "./context/UserContext";
 import { CartProvider } from "./context/CartContext";
@@ -40,7 +40,7 @@ function MainApp() {
         {user.role === "gestionnaire" && (
           <>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/store/:storeId" element={<MagasinDetail />} />
+            <Route path="/store/:storeId" element={<StoreDetail />} />
           </>
         )}
         

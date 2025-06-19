@@ -45,12 +45,12 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       const response = await fetch("http://localhost:3000/api/v1/products");
-      if (!response.ok) throw new Error("Erreur lors du chargement des produits");
+      if (!response.ok)          throw new Error("Error loading products");
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error("Erreur:", error);
-      setError("Erreur lors du chargement des produits");
+      setError("Error loading products");
     }
   };
 
@@ -91,10 +91,10 @@ const Products = () => {
           throw new Error("Vous n'avez pas les droits nécessaires pour cette action.");
         } else if (response.status === 409 || response.status === 500) {
           // 409 Conflict or 500 with constraint error
-          throw new Error("Ce produit ne peut pas être supprimé car il est utilisé dans des stocks ou des ventes.");
+          throw new Error("This product cannot be deleted because it is being used in stocks or sales.");
         } else {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Erreur lors de la suppression du produit");
+          throw new Error(errorData.error || "Error deleting product");
         }
       }
       
@@ -240,7 +240,7 @@ const Products = () => {
       <Paper elevation={1} sx={{ mx: 4, mt: 4, p: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            Catalogue de produits
+            Product Catalog
           </Typography>
           {user?.role === "client" ? (
             <FormControlLabel
@@ -251,7 +251,7 @@ const Products = () => {
                   color="primary"
                 />
               }
-              label="Afficher uniquement les produits disponibles"
+              label="Show only available products"
               labelPlacement="start"
             />
           ) : (
@@ -261,7 +261,7 @@ const Products = () => {
               startIcon={<AddIcon />}
               onClick={handleOpenAddModal}
             >
-              Ajouter un produit
+              Add Product
             </Button>
           )}
         </Box>
@@ -290,7 +290,7 @@ const Products = () => {
         {/* Modal for product editing */}
         <Modal
           open={editModalOpen}
-          title="Modification du produit"
+          title="Edit Product"
           onClose={cancelEdit}
         >
           <ProductEditForm
@@ -303,7 +303,7 @@ const Products = () => {
         {/* Modal for adding new product */}
         <Modal
           open={addModalOpen}
-          title="Ajouter un nouveau produit"
+          title="Add New Product"
           onClose={handleCloseAddModal}
         >
           <ProductEditForm
@@ -317,12 +317,12 @@ const Products = () => {
         {/* Confirmation modal for product deletion */}
         <Modal
           open={modalOpen}
-          title="Confirmation de suppression"
+          title="Delete Confirmation"
           onClose={cancelDelete}
           onConfirm={confirmDelete}
         >
           <div style={{ margin: "16px 0 0 0" }}>
-            Êtes-vous sûr de vouloir supprimer <b>{productToDelete?.nom}</b> ?
+            Are you sure you want to delete <b>{productToDelete?.nom}</b>?
           </div>
         </Modal>
         

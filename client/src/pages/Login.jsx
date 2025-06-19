@@ -42,7 +42,7 @@ function Login() {
     
     // Validate form fields
     if (!nom.trim()) {
-      setError("Veuillez entrer votre nom !");
+      setError("Please enter your name!");
       setLoading(false);
       return;
     }
@@ -73,7 +73,7 @@ function Login() {
       .then(({ userData, token }) => {
         // For client role, ensure a store is selected
         if (userData.role === "client" && !magasinId) {
-          setError("En tant que client, veuillez choisir un magasin !");
+          setError("As a client, please choose a store!");
           setLoading(false);
           return;
         }
@@ -116,19 +116,19 @@ function Login() {
         borderRadius: "8px",
         boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
       }}>
-        <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Connexion</h2>
+        <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Login</h2>
         
         <form onSubmit={handleSubmit}>
           {/* Username field */}
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Nom d'utilisateur:
+              Username:
             </label>
             <input
               type="text"
               value={nom}
               onChange={(e) => setNom(e.target.value)}
-              placeholder="Entrez votre nom d'utilisateur"
+              placeholder="Enter your username"
               style={{
                 width: "100%",
                 padding: "0.5rem",
@@ -141,13 +141,13 @@ function Login() {
           {/* Password field */}
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Mot de passe:
+              Password:
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Entrez votre mot de passe"
+              placeholder="Enter your password"
               style={{
                 width: "100%",
                 padding: "0.5rem",
@@ -160,7 +160,7 @@ function Login() {
           {/* Store selection field */}
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ display: "block", marginBottom: "0.5rem" }}>
-              Magasin (pour les clients):
+              Store (for clients):
             </label>
             <select
               value={magasinId}
@@ -173,7 +173,7 @@ function Login() {
                 backgroundColor: "white"
               }}
             >
-              <option value="">-- Sélectionnez un magasin --</option>
+              <option value="">-- Select a store --</option>
               {magasins.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nom}
@@ -185,7 +185,7 @@ function Login() {
               fontSize: "0.8rem", 
               color: "#666" 
             }}>
-              * Si vous êtes gestionnaire, vous pouvez ignorer cette sélection
+              * If you are a manager, you can ignore this selection
             </p>
           </div>
           
@@ -218,7 +218,7 @@ function Login() {
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
       </div>
@@ -234,7 +234,7 @@ function Login() {
         borderRadius: "6px"
       }}>
         <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1rem", textAlign: "center" }}>
-          Comptes de test
+          Test Accounts
         </h3>
         
         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -243,15 +243,15 @@ function Login() {
               Client:
             </p>
             <ul style={{ margin: "0", paddingLeft: "1.5rem", fontSize: "0.9rem" }}>
-              <li>Nom: <strong>c</strong></li>
-              <li>Mot de passe: <strong>c</strong></li>
-              <li>Choisir un magasin</li>
+              <li>Name: <strong>c</strong></li>
+              <li>Password: <strong>c</strong></li>
+              <li>Choose a store</li>
             </ul>
           </div>
           
           <div style={{ width: "48%" }}>
             <p style={{ fontWeight: "bold", margin: "0.5rem 0", fontSize: "0.9rem" }}>
-              Gestionnaire:
+              Manager:
             </p>
             <ul style={{ margin: "0", paddingLeft: "1.5rem", fontSize: "0.9rem" }}>
               <li>Nom: <strong>g</strong></li>

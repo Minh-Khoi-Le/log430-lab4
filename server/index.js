@@ -53,10 +53,10 @@ app.use(express.urlencoded({ extended: true }));
 /**
  * API Documentation Setup
  * 
- * Loads MagasinAPI/Swagger specification from YAML file
+ * Loads StoreAPI/Swagger specification from YAML file
  * Serves interactive API documentation at /api/docs endpoint
  */
-const swaggerDoc = YAML.load('./docs/magasinapi.yaml');
+const swaggerDoc = YAML.load('./docs/storeapi.yaml');
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 /**
@@ -65,8 +65,8 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
  * Each route module handles a specific domain of the application
  */
 app.use('/api/v1/products', (await import('./routes/product.routes.js')).default);
-app.use('/api/v1/stores', (await import('./routes/magasin.routes.js')).default);
-app.use('/api/v1/sales', (await import('./routes/vente.routes.js')).default);
+app.use('/api/v1/stores', (await import('./routes/store.routes.js')).default);
+app.use('/api/v1/sales', (await import('./routes/sale.routes.js')).default);
 app.use('/api/v1/maisonmere', (await import('./routes/maisonmere.routes.js')).default);
 app.use('/api/v1/users', (await import('./routes/user.routes.js')).default);
 app.use('/api/v1/stock', (await import('./routes/stock.routes.js')).default);

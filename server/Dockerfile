@@ -2,20 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Installe les dépendances
+# Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copie tout le code source (y compris prisma/)
+# Copy all source code (including prisma/)
 COPY . .
 
-# Génère le client Prisma (obligatoire)
+# Generate Prisma client (required)
 RUN npx prisma generate
 
 EXPOSE 3000
 
-# Ajoute la migration automatique au démarrage :
+# Add automatic migration on startup:
 CMD npx prisma migrate deploy && npm start
 
-# seed la BD  automatiquement après migration :
+# Automatically seed the database after migration:
 CMD npx prisma migrate deploy && npm run seed && npm start

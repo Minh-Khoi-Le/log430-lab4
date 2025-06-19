@@ -9,45 +9,45 @@ const RefundDAO = {
    * Updates the sale status and returns products to inventory.
    * 
    * @param {Object} refundData - Refund transaction data
-   * @param {number|string} refundData.venteId - Original sale ID
-   * @param {number|string} refundData.magasinId - Store ID where the refund is processed
+   * @param {number|string} refundData.saleId - Original sale ID
+   * @param {number|string} refundData.storeId - Store ID where the refund is processed
    * @param {number|string} refundData.userId - User ID requesting the refund
    * @param {string} [refundData.reason] - Optional reason for the refund
-   * @param {Array} refundData.lignes - Array of refunded items
+   * @param {Array} refundData.lines - Array of refunded items
    * @param {number} refundData.total - Total refund amount
    * @returns {Promise<Object>} - Promise resolving to created refund with line items
    */
-  create: async ({ venteId, magasinId, userId, lignes, total, reason }) => {
+  create: async ({ saleId, storeId, userId, lines, total, reason }) => {
     // Process refund in a transaction to ensure data consistency
     return prisma.$transaction(async (tx) => {
       // Create the refund record
       const refund = await tx.refund.create({
         data: {
-          venteId: parseInt(venteId),
-          magasinId: parseInt(magasinId),
+          saleId: parseInt(saleId),
+          storeId: parseInt(storeId),
           userId: parseInt(userId),
           total: parseFloat(total),
           reason,
-          lignes: {
-            create: lignes.map(ligne => ({
-              productId: parseInt(ligne.productId),
-              quantite: parseInt(ligne.quantite),
-              prixUnitaire: parseFloat(ligne.prixUnitaire)
+          lines: {
+            create: lines.map(line => ({
+              productId: parseInt(line.productId),
+              quantity: parseInt(line.quantity),
+              unitPrice: parseFloat(line.unitPrice)
             }))
           }
         },
         include: { 
-          lignes: { include: { product: true } },
-          vente: true,
+          lines: { include: { product: true } },
+          sale: true,
           user: true,
-          magasin: true
+          store: true
         }
       });
       
       // Update the original sale status (to either 'refunded' or 'partially_refunded')
-      const originalSale = await tx.vente.findUnique({
-        where: { id: parseInt(venteId) },
-        include: { lignes: true }
+      const originalSale = await tx.sale.findUnique({
+        where: { id: parseInt(saleId) },
+        include: { lines: true }
       });
       
       // Calculate how much of the sale is being refunded
@@ -55,20 +55,20 @@ const RefundDAO = {
       const saleTotal = originalSale.total;
       const isFullRefund = Math.abs(refundTotal - saleTotal) < 0.01; // Allow for small rounding differences
       
-      await tx.vente.update({
-        where: { id: parseInt(venteId) },
+      await tx.sale.update({
+        where: { id: parseInt(saleId) },
         data: { status: isFullRefund ? 'refunded' : 'partially_refunded' }
       });
       
       // Return products to stock
-      for (const ligne of lignes) {
+      for (const line of lines) {
         await tx.stock.updateMany({
           where: { 
-            productId: parseInt(ligne.productId), 
-            magasinId: parseInt(magasinId) 
+            productId: parseInt(line.productId), 
+            storeId: parseInt(storeId) 
           },
           data: { 
-            quantite: { increment: parseInt(ligne.quantite) } 
+            quantity: { increment: parseInt(line.quantity) } 
           }
         });
       }
@@ -89,9 +89,9 @@ const RefundDAO = {
     prisma.refund.findMany({
       where: { userId: parseInt(userId) },
       include: { 
-        lignes: { include: { product: true } },
-        vente: true,
-        magasin: true
+        lines: { include: { product: true } },
+        sale: true,
+        store: true
       },
       orderBy: { date: 'desc' }
     }),
@@ -101,16 +101,16 @@ const RefundDAO = {
    * 
    * Retrieves all refunds for a specific sale.
    * 
-   * @param {number|string} venteId - Sale ID
+   * @param {number|string} saleId - Sale ID
    * @returns {Promise<Array>} - Promise resolving to array of refunds for the sale
    */
-  getBySale: async (venteId) =>
+  getBySale: async (saleId) =>
     prisma.refund.findMany({
-      where: { venteId: parseInt(venteId) },
+      where: { saleId: parseInt(saleId) },
       include: { 
-        lignes: { include: { product: true } },
+        lines: { include: { product: true } },
         user: true,
-        magasin: true
+        store: true
       }
     }),
   
@@ -125,11 +125,11 @@ const RefundDAO = {
    */
   getByStore: async (storeId, limit) => {
     const query = {
-      where: { magasinId: parseInt(storeId) },
+      where: { storeId: parseInt(storeId) },
       include: { 
-        lignes: { include: { product: true } }, 
+        lines: { include: { product: true } }, 
         user: true,
-        vente: true
+        sale: true
       },
       orderBy: { date: 'desc' }
     };
@@ -152,9 +152,9 @@ const RefundDAO = {
     prisma.refund.findMany({ 
       include: { 
         user: true, 
-        vente: true, 
-        magasin: true,
-        lignes: { include: { product: true } }
+        sale: true, 
+        store: true,
+        lines: { include: { product: true } }
       },
       orderBy: { date: 'desc' }
     }),

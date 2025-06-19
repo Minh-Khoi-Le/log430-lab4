@@ -13,12 +13,12 @@ const StockDAO = {
    * - Check product availability for sales
    * - Identify products that need restocking
    * 
-   * @param {number|string} magasinId - Store ID
+   * @param {number|string} storeId - Store ID
    * @returns {Promise<Array>} - Promise resolving to array of stock records with product details
    */
-  getStockByMagasin: async (magasinId) =>
+  getStockByStore: async (storeId) =>
     prisma.stock.findMany({
-      where: { magasinId: parseInt(magasinId) },
+      where: { storeId: parseInt(storeId) },
       include: { product: true },
     }),
     
@@ -29,27 +29,27 @@ const StockDAO = {
    * Creates a new stock record if one doesn't exist.
    * 
    * @param {number|string} productId - Product ID
-   * @param {number|string} magasinId - Store ID
-   * @param {number} quantite - New stock quantity
+   * @param {number|string} storeId - Store ID
+   * @param {number} quantity - New stock quantity
    * @returns {Promise<Object>} - Promise resolving to the updated stock record
    */
-  updateStock: async (productId, magasinId, quantite) => {
+  updateStock: async (productId, storeId, quantity) => {
     const numericProductId = parseInt(productId);
-    const numericMagasinId = parseInt(magasinId);
-    const numericQuantite = parseInt(quantite);
+    const numericStoreId = parseInt(storeId);
+    const numericQuantity = parseInt(quantity);
     
     return prisma.stock.upsert({
       where: {
-        magasinId_productId: {
-          magasinId: numericMagasinId,
+        storeId_productId: {
+          storeId: numericStoreId,
           productId: numericProductId
         }
       },
-      update: { quantite: numericQuantite },
+      update: { quantity: numericQuantity },
       create: {
-        magasinId: numericMagasinId,
+        storeId: numericStoreId,
         productId: numericProductId,
-        quantite: numericQuantite
+        quantity: numericQuantity
       }
     });
   },
@@ -65,7 +65,7 @@ const StockDAO = {
   getStockByProduct: async (productId) =>
     prisma.stock.findMany({
       where: { productId: parseInt(productId) },
-      include: { magasin: true }
+      include: { store: true }
     })
 };
 

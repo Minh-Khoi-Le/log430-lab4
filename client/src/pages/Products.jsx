@@ -86,9 +86,9 @@ const Products = () => {
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Vous n'êtes pas autorisé à effectuer cette action. Veuillez vous reconnecter.");
+          throw new Error("You are not authorized to perform this action. Please log in again.");
         } else if (response.status === 403) {
-          throw new Error("Vous n'avez pas les droits nécessaires pour cette action.");
+          throw new Error("You don't have the necessary permissions for this action.");
         } else if (response.status === 409 || response.status === 500) {
           // 409 Conflict or 500 with constraint error
           throw new Error("This product cannot be deleted because it is being used in stocks or sales.");
@@ -125,8 +125,8 @@ const Products = () => {
     try {
       // Create a copy of the product with only the fields we want to update
       const productToUpdate = {
-        name: editedProduct.nom,
-        price: editedProduct.prix,
+        name: editedProduct.name,
+        price: editedProduct.price,
         description: editedProduct.description
       };
       
@@ -141,15 +141,15 @@ const Products = () => {
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Vous n'êtes pas autorisé à effectuer cette action. Veuillez vous reconnecter.");
+          throw new Error("You are not authorized to perform this action. Please log in again.");
         } else if (response.status === 403) {
-          throw new Error("Vous n'avez pas les droits nécessaires pour cette action.");
+          throw new Error("You don't have the necessary permissions for this action.");
         } else if (response.status === 400) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Validation erreur: Veuillez vérifier les champs requis.");
+          throw new Error(errorData.error || "Validation error: Please check the required fields.");
         } else {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Erreur lors de la modification du produit");
+          throw new Error(errorData.error || "Error modifying the product");
         }
       }
       
@@ -191,23 +191,23 @@ const Products = () => {
           "Authorization": `Bearer ${user.token || 'dummy-token'}`
         },
         body: JSON.stringify({
-          name: newProduct.nom,
-          price: parseFloat(newProduct.prix),
+          name: newProduct.name,
+          price: parseFloat(newProduct.price),
           description: newProduct.description || ""
         }),
       });
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Vous n'êtes pas autorisé à effectuer cette action. Veuillez vous reconnecter.");
+          throw new Error("You are not authorized to perform this action. Please log in again.");
         } else if (response.status === 403) {
-          throw new Error("Vous n'avez pas les droits nécessaires pour cette action.");
+          throw new Error("You don't have the necessary permissions for this action.");
         } else if (response.status === 400) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Validation erreur: Veuillez vérifier les champs requis.");
+          throw new Error(errorData.error || "Validation error: Please check the required fields.");
         } else {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Erreur lors de l'ajout du produit");
+          throw new Error(errorData.error || "Error adding the product");
         }
       }
       
@@ -307,7 +307,7 @@ const Products = () => {
           onClose={handleCloseAddModal}
         >
           <ProductEditForm
-            product={{ nom: "", prix: 0, stocks: [] }}
+            product={{ name: "", price: 0, stocks: [] }}
             onSave={handleAddProduct}
             onCancel={handleCloseAddModal}
             isNewProduct
@@ -322,7 +322,7 @@ const Products = () => {
           onConfirm={confirmDelete}
         >
           <div style={{ margin: "16px 0 0 0" }}>
-            Are you sure you want to delete <b>{productToDelete?.nom}</b>?
+            Are you sure you want to delete <b>{productToDelete?.name}</b>?
           </div>
         </Modal>
         

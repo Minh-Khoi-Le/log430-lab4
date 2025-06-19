@@ -174,7 +174,7 @@ const History = () => {
       }
       
       const purchasesData = await purchasesResponse.json();
-      setPurchases(purchasesData);
+      setPurchases(Array.isArray(purchasesData) ? purchasesData : []);
       
       // Fetch refund history
       const refundsResponse = await fetch("http://localhost:3000/api/v1/refunds/history", {
@@ -188,7 +188,7 @@ const History = () => {
       }
       
       const refundsData = await refundsResponse.json();
-      setRefunds(refundsData);
+      setRefunds(Array.isArray(refundsData) ? refundsData : []);
       
     } catch (err) {
       console.error("Error fetching history:", err);
@@ -331,7 +331,7 @@ const History = () => {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <StoreIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {purchase.magasin.nom}
+                        {purchase.store.name}
                       </Typography>
                     </Box>
                   </Box>
@@ -343,9 +343,9 @@ const History = () => {
                       Purchased items:
                     </Typography>
                     <List disablePadding>
-                      {purchase.lignes.map((ligne) => (
+                      {purchase.lines.map((line) => (
                         <ListItem 
-                          key={ligne.id} 
+                          key={line.id} 
                           disablePadding 
                           sx={{ 
                             py: 1,
@@ -357,16 +357,16 @@ const History = () => {
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {ligne.product.nom}
+                                  {line.product.name}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {(ligne.quantite * ligne.prixUnitaire).toFixed(2)} €
+                                  {(line.quantity * line.unitPrice).toFixed(2)} €
                                 </Typography>
                               </Box>
                             }
                             secondary={
                               <Typography variant="caption" color="text.secondary">
-                                {ligne.quantite} x {ligne.prixUnitaire.toFixed(2)} €
+                                {line.quantity} x {line.unitPrice.toFixed(2)} €
                               </Typography>
                             }
                           />
@@ -431,7 +431,7 @@ const History = () => {
                         Refund #{refund.id}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        For order #{refund.vente.id}
+                        For order #{refund.sale.id}
                       </Typography>
                     </Box>
                     <Chip 
@@ -452,7 +452,7 @@ const History = () => {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <StoreIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {refund.magasin.nom}
+                        {refund.store.name}
                       </Typography>
                     </Box>
                   </Box>
@@ -472,9 +472,9 @@ const History = () => {
                       Refunded items:
                     </Typography>
                     <List disablePadding>
-                      {refund.lignes.map((ligne) => (
+                      {(refund.lines || []).map((line) => (
                         <ListItem 
-                          key={ligne.id} 
+                          key={line.id} 
                           disablePadding 
                           sx={{ 
                             py: 1,
@@ -486,16 +486,16 @@ const History = () => {
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {ligne.product.nom}
+                                  {line.product.name}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {(ligne.quantite * ligne.prixUnitaire).toFixed(2)} €
+                                  {(line.quantity * line.unitPrice).toFixed(2)} €
                                 </Typography>
                               </Box>
                             }
                             secondary={
                               <Typography variant="caption" color="text.secondary">
-                                {ligne.quantite} x {ligne.prixUnitaire.toFixed(2)} €
+                                {line.quantity} x {line.unitPrice.toFixed(2)} €
                               </Typography>
                             }
                           />

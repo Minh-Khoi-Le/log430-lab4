@@ -7,7 +7,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import ProductDAO from '../dao/product.dao.js';
-import MagasinDAO from '../dao/magasin.dao.js';
+import StoreDAO from '../dao/store.dao.js';
 import * as controller from '../controllers/maisonmere.controller.js';
 
 const prisma = new PrismaClient();
@@ -31,7 +31,7 @@ router.get("/products", async (req, res) => {
   } catch (err) {
     res
       .status(500)
-      .json({ error: "Erreur lors de la récupération des produits" });
+      .json({ error: "Error retrieving products" });
   }
 });
 
@@ -50,12 +50,12 @@ router.get("/products", async (req, res) => {
 router.get("/products/:id", async (req, res) => {
   try {
     const product = await ProductDAO.getById(req.params.id);
-    if (!product) return res.status(404).json({ error: "Produit non trouvé" });
+    if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
     res
       .status(500)
-      .json({ error: "Erreur lors de la récupération du produit" });
+      .json({ error: "Error retrieving product" });
   }
 });
 
@@ -65,8 +65,8 @@ router.get("/products/:id", async (req, res) => {
  * Create a new product in the catalog
  * 
  * Request body:
- * - nom: Product name
- * - prix: Product price
+ * - name: Product name
+ * - price: Product price
  * - stock: Initial stock level
  * 
  * Used by:
@@ -75,12 +75,12 @@ router.get("/products/:id", async (req, res) => {
  */
 router.post("/products", async (req, res) => {
   try {
-    const { nom, prix, stock } = req.body;
+    const { name, price, stock } = req.body;
     
     // Create the product first
     const productData = {
-      nom,
-      prix: parseFloat(prix)
+      name,
+      price: parseFloat(price)
     };
     
     // Use a transaction to create the product and set initial stock levels
@@ -89,7 +89,7 @@ router.post("/products", async (req, res) => {
       const product = await tx.product.create({ data: productData });
       
       // Get all stores
-      const stores = await tx.magasin.findMany();
+      const stores = await tx.store.findMany();
       
       // Create stock entries for each store
       // Use the provided stock value or default to 0
@@ -98,8 +98,8 @@ router.post("/products", async (req, res) => {
         await tx.stock.create({
           data: {
             productId: product.id,
-            magasinId: store.id,
-            quantite: stockValue
+            storeId: store.id,
+            quantity: stockValue
           }
         });
       }
@@ -116,7 +116,7 @@ router.post("/products", async (req, res) => {
     res
       .status(400)
       .json({
-        error: "Erreur lors de la création du produit",
+        error: "Error creating product",
         details: err.message,
       });
   }
@@ -131,8 +131,8 @@ router.post("/products", async (req, res) => {
  * - id: Product ID
  * 
  * Request body:
- * - nom: Product name (optional)
- * - prix: Product price (optional)
+ * - name: Product name (optional)
+ * - price: Product price (optional)
  * - stock: Stock level (optional)
  * 
  * Used by:
@@ -141,10 +141,10 @@ router.post("/products", async (req, res) => {
  */
 router.put("/products/:id", async (req, res) => {
   try {
-    const { nom, prix, stock } = req.body;
+    const { name, price, stock } = req.body;
     const maj = await ProductDAO.update(req.params.id, {
-      nom,
-      prix: parseFloat(prix),
+      name,
+      price: parseFloat(price),
       stock: parseInt(stock),
     });
     res.json(maj);
@@ -152,7 +152,7 @@ router.put("/products/:id", async (req, res) => {
     res
       .status(400)
       .json({
-        error: "Erreur lors de la modification du produit",
+        error: "Error modifying product",
         details: err.message,
       });
   }
@@ -175,41 +175,41 @@ router.delete("/products/:id", async (req, res) => {
     await ProductDAO.delete(req.params.id);
     res.json({ success: true });
   } catch (err) {
-    res.status(404).json({ error: "Produit non trouvé", details: err.message });
+    res.status(404).json({ error: "Product not found", details: err.message });
   }
 });
 
 //STORE MANAGEMENT ROUTES (To be implemented)
 /**
- * POST /api/v1/maisonmere/magasins
+ * POST /api/v1/maisonmere/stores
  * 
  * Create a new store
  * 
  * Request body:
- * - nom: Store name
- * - adresse: Store address
+ * - name: Store name
+ * - address: Store address
  * 
  * Used by:
  * - Admin dashboard for store management
  * - Store network expansion workflows
  */
-router.post("/magasins", async (req, res) => {
+router.post("/stores", async (req, res) => {
   try {
-    const { nom, adresse } = req.body;
-    const magasin = await MagasinDAO.createWithDefaultStock({ nom, adresse });
-    res.status(201).json(magasin);
+    const { name, address } = req.body;
+    const store = await StoreDAO.createWithDefaultStock({ name, address });
+    res.status(201).json(store);
   } catch (err) {
     res
       .status(400)
       .json({
-        error: "Erreur lors de la création du magasin",
+        error: "Error creating store",
         details: err.message,
       });
   }
 });
 
 /**
- * PUT /api/v1/maisonmere/magasins/:id
+ * PUT /api/v1/maisonmere/stores/:id
  * 
  * Update an existing store
  * 
@@ -217,30 +217,30 @@ router.post("/magasins", async (req, res) => {
  * - id: Store ID
  * 
  * Request body:
- * - nom: Store name (optional)
- * - adresse: Store address (optional)
+ * - name: Store name (optional)
+ * - address: Store address (optional)
  * 
  * Used by:
  * - Admin dashboard for store management
  * - Store information update workflows
  */
-router.put("/magasins/:id", async (req, res) => {
+router.put("/stores/:id", async (req, res) => {
   try {
-    const { nom, adresse } = req.body;
-    const magasin = await MagasinDAO.update(req.params.id, { nom, adresse });
-    res.json(magasin);
+    const { name, address } = req.body;
+    const store = await StoreDAO.update(req.params.id, { name, address });
+    res.json(store);
   } catch (err) {
     res
       .status(400)
       .json({
-        error: "Erreur lors de la modification du magasin",
+        error: "Error modifying store",
         details: err.message,
       });
   }
 });
 
 /**
- * DELETE /api/v1/maisonmere/magasins/:id
+ * DELETE /api/v1/maisonmere/stores/:id
  * 
  * Remove a store from the network
  * 
@@ -251,12 +251,12 @@ router.put("/magasins/:id", async (req, res) => {
  * - Admin dashboard for store management
  * - Store closure workflows
  */
-router.delete("/magasins/:id", async (req, res) => {
+router.delete("/stores/:id", async (req, res) => {
   try {
-    await MagasinDAO.delete(req.params.id);
+    await StoreDAO.delete(req.params.id);
     res.json({ success: true });
   } catch (err) {
-    res.status(404).json({ error: "Magasin non trouvé", details: err.message });
+    res.status(404).json({ error: "Store not found", details: err.message });
   }
 });
 
@@ -289,17 +289,18 @@ router.get("/stats", controller.getStats);
 router.get("/refund-stats", controller.getRefundStats);
 
 /**
- * GET /api/v1/maisonmere/ventes-consolidees
+ * GET /api/v1/maisonmere/consolidated-sales
  * 
  * Get consolidated sales data within a date range
  * 
  * Query parameters:
- * - debut: Start date in YYYY-MM-DD format
- * - fin: End date in YYYY-MM-DD format
+ * - startDate: Start date in YYYY-MM-DD format
+ * - endDate: End date in YYYY-MM-DD format
  * 
  * Used by:
  * - Sales report generation
  */
-router.get("/ventes-consolidees", controller.getConsolidatedSales);
+router.get("/consolidated-sales", controller.getConsolidatedSales);
+
 
 export default router;

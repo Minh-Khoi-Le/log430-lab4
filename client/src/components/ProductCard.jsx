@@ -34,17 +34,17 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
   
   // Calculate total stock across all stores (for gestionnaire)
   const totalStock = product.stocks
-    ? product.stocks.reduce((sum, s) => sum + s.quantite, 0)
+    ? product.stocks.reduce((sum, s) => sum + s.quantity, 0)
     : 0;
     
   // Get stock for the current store (for client)
   const currentStoreStock = product.stocks
-    ? product.stocks.find(s => s.magasinId === user?.magasinId)?.quantite || 0
+    ? product.stocks.find(s => s.storeId === user?.storeId)?.quantity || 0
     : 0;
     
   // Determine which stock value to display based on user role
   const displayStock = user?.role === "gestionnaire" ? totalStock : currentStoreStock;
-  const stockLabel = user?.role === "gestionnaire" ? "Stock total" : "Stock disponible";
+  const stockLabel = user?.role === "gestionnaire" ? "Total stock" : "Available stock";
 
   // Check if user is a client for conditional rendering
   const isClient = user?.role === "client";
@@ -74,9 +74,9 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
         {/* Product name and price header */}
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {product.nom}
+            {product.name}
           </Typography>
-          <Typography variant="h6">${product.prix.toFixed(2)}</Typography>
+          <Typography variant="h6">${product.price.toFixed(2)}</Typography>
         </Box>
         
         {/* Stock availability information */}
@@ -101,7 +101,7 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
           <Box>
             {/* Edit button */}
             {onEdit && (
-              <Tooltip title="Modifier" placement="top" arrow>
+              <Tooltip title="Edit" placement="top" arrow>
                 <IconButton
                   size="small"
                   color="primary"
@@ -117,7 +117,7 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
             
             {/* Delete button */}
             {onDelete && (
-              <Tooltip title="Supprimer" placement="top" arrow>
+              <Tooltip title="Delete" placement="top" arrow>
                 <IconButton
                   size="small"
                   color="error"
@@ -153,7 +153,7 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
               }}
               fullWidth
             >
-              {currentStoreStock === 0 ? "Indisponible" : "Ajouter au panier"}
+              {currentStoreStock === 0 ? "Unavailable" : "Add to cart"}
             </Button>
           </Box>
         )}

@@ -15,42 +15,55 @@ components:
   schemas:
     Product:
       type: object
-      required: [id, nom, prix]
+      required: [id, name, price]
       properties:
         id:
           type: integer
           example: 1
-        nom:
+        name:
           type: string
           example: "Product Name"
-        prix:
+        price:
           type: number
           format: float
           example: 99.99
         description:
           type: string
           example: "Product description"
+        stocks:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              quantity:
+                type: integer
+              storeId:
+                type: integer
+              productId:
+                type: integer
     Store:
       type: object
-      required: [id, nom]
+      required: [id, name]
       properties:
         id:
           type: integer
           example: 1
-        nom:
+        name:
           type: string
           example: "Store Name"
-        adresse:
+        address:
           type: string
           example: "123 Main Street"
     User:
       type: object
-      required: [id, nom, role]
+      required: [id, name, role]
       properties:
         id:
           type: integer
           example: 1
-        nom:
+        name:
           type: string
           example: "User Name"
         role:
@@ -59,12 +72,12 @@ components:
           example: "client"
     Sale:
       type: object
-      required: [magasinId, userId]
+      required: [storeId, userId]
       properties:
         id:
           type: integer
           example: 1
-        magasinId:
+        storeId:
           type: integer
           example: 1
         userId:
@@ -73,20 +86,24 @@ components:
         date:
           type: string
           format: date-time
-        lignes:
+        lines:
           type: array
           items:
             type: object
             properties:
-              producId:
+              productId:
                 type: integer
-              quantite:
+              quantity:
                 type: integer
-              prixUnitaire:
+              unitPrice:
                 type: number
         total:
           type: number
           format: float
+        status:
+          type: string
+          enum: [active, refunded, partially_refunded]
+          default: active
     Error:
       type: object
       properties:
@@ -259,11 +276,11 @@ paths:
         '204':
           description: No content
   
-  /stores/{magasinId}/stock:
+  /stores/{storeId}/stock:
     get:
       summary: Get stock levels for a specific store
       parameters:
-        - name: magasinId
+        - name: storeId
           in: path
           required: true
           schema:
@@ -279,6 +296,12 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sale'
     post:
       summary: Create a new sale
       requestBody:
@@ -286,10 +309,62 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Sale'
+              type: object
+              properties:
+                clientName:
+                  type: string
+                  description: Client name (used to find user if userId not provided)
+                storeId:
+                  type: integer
+                  description: Store ID where the sale occurred
+                userId:
+                  type: integer
+                  description: User ID (optional if clientName provided)
+                cart:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                      quantity:
+                        type: integer
+                      price:
+                        type: number
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+  
+  /sales/history:
+    post:
+      summary: Get sales history for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sale'
   
   /sales/user/{userId}:
     get:
@@ -303,6 +378,39 @@ paths:
       responses:
         '200':
           description: OK
+  
+  /sales/store/{storeId}:
+    get:
+      summary: Get sales for a specific store
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+  
+  /sales/refund:
+    post:
+      summary: Refund a sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                saleId:
+                  type: integer
+      responses:
+        '200':
+          description: Refund processed successfully
   
   # User routes
   /users:
@@ -320,7 +428,7 @@ paths:
             schema:
               type: object
               properties:
-                nom:
+                name:
                   type: string
                 role:
                   type: string
@@ -341,7 +449,7 @@ paths:
             schema:
               type: object
               properties:
-                nom:
+                name:
                   type: string
                 password:
                   type: string
@@ -372,7 +480,7 @@ paths:
         '200':
           description: OK
   
-  /users/{id}/ventes:
+  /users/{id}/sales:
     get:
       summary: Get sales history for a user
       parameters:
@@ -393,16 +501,16 @@ paths:
         '200':
           description: OK
   
-  /maisonmere/ventes-consolidees:
+  /maisonmere/consolidated-sales:
     get:
       summary: Get consolidated sales data across all stores
       parameters:
-        - name: debut
+        - name: startDate
           in: query
           schema:
             type: string
             format: date
-        - name: fin
+        - name: endDate
           in: query
           schema:
             type: string
@@ -425,4 +533,81 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "ok" 
+                    example: "ok"
+  
+  # Stock routes
+  /stock/product/{productId}:
+    get:
+      summary: Get stock levels for a specific product across all stores
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Update stock quantity for a product in a store
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                storeId:
+                  type: integer
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Stock updated successfully
+  
+  # Refund routes
+  /refunds:
+    post:
+      summary: Create a new refund
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                saleId:
+                  type: integer
+                userId:
+                  type: integer
+                reason:
+                  type: string
+      responses:
+        '201':
+          description: Refund created successfully
+  
+  /refunds/history:
+    post:
+      summary: Get refund history for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+      responses:
+        '200':
+          description: OK 

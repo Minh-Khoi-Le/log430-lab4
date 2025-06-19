@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-const MagasinDAO = {
+const StoreDAO = {
   /**
    * Create Store
    * 
    * Creates a new store in the database.
    * 
    * @param {Object} data - Store data
-   * @param {string} data.nom - Store name
-   * @param {string} [data.adresse] - Store address (optional)
+   * @param {string} data.name - Store name
+   * @param {string} [data.address] - Store address (optional)
    * @returns {Promise<Object>} - Promise resolving to created store
    */
-  create: async (data) => prisma.magasin.create({ data }),
+  create: async (data) => prisma.store.create({ data }),
   
   /**
    * Create Store with Default Stock
@@ -21,14 +21,14 @@ const MagasinDAO = {
    * This ensures that the new store has stock records for all products.
    * 
    * @param {Object} data - Store data
-   * @param {string} data.nom - Store name
-   * @param {string} [data.adresse] - Store address (optional)
+   * @param {string} data.name - Store name
+   * @param {string} [data.address] - Store address (optional)
    * @returns {Promise<Object>} - Promise resolving to created store with stock information
    */
   createWithDefaultStock: async (data) => {
     return prisma.$transaction(async (tx) => {
       // First, create the store
-      const store = await tx.magasin.create({ data });
+      const store = await tx.store.create({ data });
       
       // Then, get all existing products
       const products = await tx.product.findMany();
@@ -37,15 +37,15 @@ const MagasinDAO = {
       for (const product of products) {
         await tx.stock.create({
           data: {
-            magasinId: store.id,
+            storeId: store.id,
             productId: product.id,
-            quantite: 0
+            quantity: 0
           }
         });
       }
       
       // Return the store with its stock information
-      return tx.magasin.findUnique({
+      return tx.store.findUnique({
         where: { id: store.id },
         include: { stocks: { include: { product: true } } }
       });
@@ -60,7 +60,7 @@ const MagasinDAO = {
    * @param {number|string} id - Store ID
    * @returns {Promise<Object|null>} - Promise resolving to store object or null if not found
    */
-  getById: async (id) => prisma.magasin.findUnique({ where: { id: parseInt(id) } }),
+  getById: async (id) => prisma.store.findUnique({ where: { id: parseInt(id) } }),
   
   /**
    * Get All Stores
@@ -69,7 +69,7 @@ const MagasinDAO = {
    * 
    * @returns {Promise<Array>} - Promise resolving to array of stores
    */
-  getAll: async () => prisma.magasin.findMany(),
+  getAll: async () => prisma.store.findMany(),
   
   /**
    * Update Store
@@ -78,11 +78,11 @@ const MagasinDAO = {
    * 
    * @param {number|string} id - Store ID
    * @param {Object} data - Updated store data
-   * @param {string} [data.nom] - Store name
-   * @param {string} [data.adresse] - Store address
+   * @param {string} [data.name] - Store name
+   * @param {string} [data.address] - Store address
    * @returns {Promise<Object>} - Promise resolving to updated store
    */
-  update: async (id, data) => prisma.magasin.update({ where: { id: parseInt(id) }, data }),
+  update: async (id, data) => prisma.store.update({ where: { id: parseInt(id) }, data }),
   
   /**
    * Delete Store
@@ -92,7 +92,7 @@ const MagasinDAO = {
    * @param {number|string} id - Store ID
    * @returns {Promise<Object>} - Promise resolving to deleted store
    */
-  delete: async (id) => prisma.magasin.delete({ where: { id: parseInt(id) } }),
+  delete: async (id) => prisma.store.delete({ where: { id: parseInt(id) } }),
 };
 
-export default MagasinDAO;
+export default StoreDAO;

@@ -16,27 +16,27 @@ const prisma = new PrismaClient();
  */
 export async function stats(req, res, next) {
   try {
-    const magasins = await prisma.magasin.findMany();
+    const stores = await prisma.store.findMany();
     const stats = await Promise.all(
-      magasins.map(async (magasin) => {
-        const ventes = await prisma.vente.findMany({
-          where: { magasinId: magasin.id },
-          include: { lignes: true },
+      stores.map(async (store) => {
+        const sales = await prisma.sale.findMany({
+          where: { storeId: store.id },
+          include: { lines: true },
         });
-        let chiffreAffaires = 0;
-        let productsVendus = 0;
-        ventes.forEach((vente) => {
-          vente.lignes.forEach((ligne) => {
-            chiffreAffaires += ligne.prixUnitaire * ligne.quantite;
-            productsVendus += ligne.quantite;
+        let revenue = 0;
+        let productsSold = 0;
+        sales.forEach((sale) => {
+          sale.lines.forEach((line) => {
+            revenue += line.unitPrice * line.quantity;
+            productsSold += line.quantity;
           });
         });
         return {
-          id: magasin.id,
-          nom: magasin.nom,
-          ventesTotal: ventes.length,
-          productsVendus,
-          chiffreAffaires,
+          id: store.id,
+          name: store.name,
+          totalSales: sales.length,
+          productsSold,
+          revenue,
         };
       })
     );
@@ -55,18 +55,18 @@ export async function stats(req, res, next) {
  * @param {Response} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-export async function ventesConsolidees(req, res, next) {
+export async function consolidatedSales(req, res, next) {
   try {
-    const { debut, fin } = req.query;
+    const { startDate, endDate } = req.query;
     const where = {};
-    if (debut && fin) {
-      where.date = { gte: new Date(debut), lte: new Date(fin) };
+    if (startDate && endDate) {
+      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
     }
-    const ventes = await prisma.vente.findMany({
+    const sales = await prisma.sale.findMany({
       where,
-      include: { magasin: true, user: true, lignes: true },
+      include: { store: true, user: true, lines: true },
     });
-    res.json(ventes);
+    res.json(sales);
   } catch (e) { next(e); }
 }
 
@@ -76,39 +76,39 @@ export async function ventesConsolidees(req, res, next) {
 export async function getStats(req, res, next) {
   try {
     // Get stats for all stores
-    const stores = await prisma.magasin.findMany();
+    const stores = await prisma.store.findMany();
     
     // For each store, get sales and calculate stats
     const stats = await Promise.all(stores.map(async (store) => {
       // Get all sales for this store
-      const sales = await prisma.vente.findMany({
+      const sales = await prisma.sale.findMany({
         where: { 
-          magasinId: store.id,
+          storeId: store.id,
           // If excludeRefunded is true, only include active sales
           ...(req.query.excludeRefunded === 'true' && { status: 'active' })
         },
         include: { 
-          lignes: { include: { product: true } }
+          lines: { include: { product: true } }
         }
       });
       
       // Calculate total products sold and revenue
-      let produitsVendus = 0;
-      let chiffreAffaires = 0;
+      let productsSold = 0;
+      let revenue = 0;
       
-      sales.forEach(vente => {
-        vente.lignes.forEach(ligne => {
-          produitsVendus += ligne.quantite;
-          chiffreAffaires += ligne.quantite * ligne.prixUnitaire;
+      sales.forEach(sale => {
+        sale.lines.forEach(line => {
+          productsSold += line.quantity;
+          revenue += line.quantity * line.unitPrice;
         });
       });
       
       return {
         id: store.id,
-        nom: store.nom,
-        ventesTotal: sales.length,
-        produitsVendus,
-        chiffreAffaires
+        name: store.name,
+        totalSales: sales.length,
+        productsSold,
+        revenue
       };
     }));
     
@@ -124,14 +124,14 @@ export async function getStats(req, res, next) {
 export async function getRefundStats(req, res, next) {
   try {
     // Get all stores
-    const stores = await prisma.magasin.findMany();
+    const stores = await prisma.store.findMany();
     
     // For each store, get refund statistics
     const refundStats = await Promise.all(stores.map(async (store) => {
       // Get all refunds for this store
       const refunds = await prisma.refund.findMany({
-        where: { magasinId: store.id },
-        include: { lignes: true }
+        where: { storeId: store.id },
+        include: { lines: true }
       });
       
       // Calculate total refund amount
@@ -142,7 +142,7 @@ export async function getRefundStats(req, res, next) {
       
       return {
         id: store.id,
-        nom: store.nom,
+        name: store.name,
         count: refunds.length,
         total: refundTotal
       };
@@ -158,27 +158,27 @@ export async function getRefundStats(req, res, next) {
  * Get consolidated sales data within a date range
  */
 export async function getConsolidatedSales(req, res, next) {
-  const { debut, fin } = req.query;
+  const { startDate, endDate } = req.query;
   
-  if (!debut || !fin) {
-    return res.status(400).json({ error: "Les dates de début et de fin sont requises" });
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: "Start and end dates are required" });
   }
   
   try {
-    const ventes = await prisma.vente.findMany({
+    const sales = await prisma.sale.findMany({
       where: {
         date: {
-          gte: new Date(debut),
-          lte: new Date(fin + 'T23:59:59')
+          gte: new Date(startDate),
+          lte: new Date(endDate + 'T23:59:59')
         }
       },
       include: {
-        lignes: {
+        lines: {
           include: {
             product: true
           }
         },
-        magasin: true,
+        store: true,
         user: true
       },
       orderBy: {
@@ -186,7 +186,7 @@ export async function getConsolidatedSales(req, res, next) {
       }
     });
     
-    res.json(ventes);
+    res.json(sales);
   } catch (err) {
     next(err);
   }

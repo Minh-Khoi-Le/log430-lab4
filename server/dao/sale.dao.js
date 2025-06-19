@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-const VenteDAO = {
+const SaleDAO = {
   /**
    * Create Sale
    * 
@@ -9,28 +9,28 @@ const VenteDAO = {
    * This function creates both the sale header and all sale line items in a single operation.
    * 
    * @param {Object} saleData - Sale transaction data
-   * @param {number|string} saleData.magasinId - Store ID where the sale occurred
+   * @param {number|string} saleData.storeId - Store ID where the sale occurred
    * @param {number|string} saleData.userId - User ID (client) who made the purchase
-   * @param {Array} saleData.lignes - Array of sale line items
+   * @param {Array} saleData.lines - Array of sale line items
    * @param {number} saleData.total - Total amount of the sale
    * @returns {Promise<Object>} - Promise resolving to created sale with line items
    */
-  create: async ({ magasinId, userId, lignes, total }) => {
+  create: async ({ storeId, userId, lines, total }) => {
     // Create the sale and associated line items in a single transaction
-    return prisma.vente.create({
+    return prisma.sale.create({
       data: {
-        magasinId: parseInt(magasinId),
+        storeId: parseInt(storeId),
         userId: parseInt(userId),
         total: parseFloat(total),
-        lignes: {
-          create: lignes.map(ligne => ({
-            productId: parseInt(ligne.productId),
-            quantite: parseInt(ligne.quantite),
-            prixUnitaire: parseFloat(ligne.prixUnitaire)
+        lines: {
+          create: lines.map(line => ({
+            productId: parseInt(line.productId),
+            quantity: parseInt(line.quantity),
+            unitPrice: parseFloat(line.unitPrice)
           }))
         }
       },
-      include: { lignes: true }
+      include: { lines: true }
     });
   },
   
@@ -44,9 +44,17 @@ const VenteDAO = {
    * @returns {Promise<Array>} - Promise resolving to array of user's sales
    */
   getByUser: async (userId) =>
-    prisma.vente.findMany({
+    prisma.sale.findMany({
       where: { userId: parseInt(userId) },
-      include: { lignes: { include: { product: true } }, magasin: true }
+      include: { 
+        lines: { 
+          include: { 
+            product: true 
+          } 
+        }, 
+        store: true 
+      },
+      orderBy: { date: 'desc' }
     }),
   
   /**
@@ -63,9 +71,9 @@ const VenteDAO = {
    */
   getByStore: async (storeId, limit) => {
     const query = {
-      where: { magasinId: parseInt(storeId) },
+      where: { storeId: parseInt(storeId) },
       include: { 
-        lignes: { include: { product: true } }, 
+        lines: { include: { product: true } }, 
         user: true 
       },
       orderBy: { date: 'desc' }
@@ -75,7 +83,7 @@ const VenteDAO = {
       query.take = limit;
     }
     
-    return prisma.vente.findMany(query);
+    return prisma.sale.findMany(query);
   },
   
   /**
@@ -86,7 +94,7 @@ const VenteDAO = {
    * 
    * @returns {Promise<Array>} - Promise resolving to array of all sales
    */
-  getAll: async () => prisma.vente.findMany({ include: { user: true, magasin: true } }),
+  getAll: async () => prisma.sale.findMany({ include: { user: true, store: true } }),
 };
 
-export default VenteDAO;
+export default SaleDAO;

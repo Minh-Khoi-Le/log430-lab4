@@ -62,15 +62,15 @@ const ProductDAO = {
       const product = await tx.product.create({ data });
       
       // Then, get all stores
-      const stores = await tx.magasin.findMany();
+      const stores = await tx.store.findMany();
       
       // Create stock entries with quantity 0 for each store
       for (const store of stores) {
         await tx.stock.create({
           data: {
-            produitId: product.id,
-            magasinId: store.id,
-            quantite: 0
+            productId: product.id,
+            storeId: store.id,
+            quantity: 0
           }
         });
       }
@@ -96,15 +96,15 @@ const ProductDAO = {
   update: async (id, data) => {
     // Extract all the fields, excluding stocks and any other fields that might cause validation errors
     const { 
-      nom, 
-      prix, 
+      name, 
+      price, 
       description 
     } = data;
     
     // Create a clean update object with only valid fields
     const updateData = {};
-    if (nom !== undefined) updateData.nom = nom;
-    if (prix !== undefined) updateData.prix = prix;
+    if (name !== undefined) updateData.name = name;
+    if (price !== undefined) updateData.price = price;
     if (description !== undefined) updateData.description = description;
     
     return prisma.product.update({ 
@@ -130,12 +130,12 @@ const ProductDAO = {
     return prisma.$transaction(async (tx) => {
       // First, delete all stock records associated with this product
       await tx.stock.deleteMany({
-        where: { produitId: numericId }
+        where: { productId: numericId }
       });
       
-      // Also need to delete any LigneVente records that reference this product
-      await tx.ligneVente.deleteMany({
-        where: { produitId: numericId }
+      // Also need to delete any SaleLine records that reference this product
+      await tx.saleLine.deleteMany({
+        where: { productId: numericId }
       });
       
       // Finally, delete the product itself

@@ -1,5 +1,5 @@
 import UserDAO from '../dao/user.dao.js';
-import VenteDAO from '../dao/vente.dao.js';
+import SaleDAO from '../dao/sale.dao.js';
 import jwt from 'jsonwebtoken';
 
 // JWT secret key from environment variables or fallback to default (for development only)
@@ -17,22 +17,22 @@ const SECRET = process.env.JWT_SECRET || 'lab4-secret';
  */
 export async function login(req, res, next) {
   try {
-    const { nom, password } = req.body;
+    const { name, password } = req.body;
     
     // Check if required fields are provided
-    if (!nom || !password) {
-      return res.status(400).json({ error: 'Nom et mot de passe requis' });
+    if (!name || !password) {
+      return res.status(400).json({ error: 'Name and password are required' });
     }
     
     // Find user by name
-    const user = await UserDAO.getByName(nom);
+    const user = await UserDAO.getByName(name);
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'User not found' });
     }
     
     // Simple password check (would use bcrypt in production)
     if (user.password !== password) {
-      return res.status(401).json({ error: 'Mot de passe incorrect' });
+      return res.status(401).json({ error: 'Incorrect password' });
     }
     
     // Generate JWT token
@@ -40,7 +40,7 @@ export async function login(req, res, next) {
       { 
         id: user.id, 
         role: user.role, 
-        nom: user.nom 
+        name: user.name 
       }, 
       SECRET, 
       { expiresIn: '1h' }
@@ -88,7 +88,7 @@ export async function list(req, res, next) {
 export async function get(req, res, next) {
   try {
     const user = await UserDAO.getById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
     
     // Remove password from response
     const { password, ...userWithoutPassword } = user;
@@ -108,13 +108,13 @@ export async function get(req, res, next) {
 export async function create(req, res, next) {
   try {
     // Validate required fields
-    if (!req.body.nom || !req.body.role) {
-      return res.status(400).json({ error: 'Nom et rôle sont requis' });
+    if (!req.body.name || !req.body.role) {
+      return res.status(400).json({ error: 'Name and role are required' });
     }
     
     // Validate role
     if (req.body.role !== 'client' && req.body.role !== 'gestionnaire') {
-      return res.status(400).json({ error: 'Le rôle doit être "client" ou "gestionnaire"' });
+      return res.status(400).json({ error: 'Role must be "client" or "gestionnaire"' });
     }
     
     const user = await UserDAO.create(req.body);
@@ -134,9 +134,9 @@ export async function create(req, res, next) {
  * @param {Response} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-export async function ventes(req, res, next) {
+export async function sales(req, res, next) {
   try {
-    const ventes = await VenteDAO.getByUser(req.params.id);
-    res.json(ventes);
+    const sales = await SaleDAO.getByUser(req.params.id);
+    res.json(sales);
   } catch (err) { next(err); }
 } 

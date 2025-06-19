@@ -29,8 +29,11 @@ export const cacheMiddleware = (ttl) => {
       
       // Override res.json method to cache response before sending
       res.json = function(data) {
-        // Cache response data
-        setCache(cacheKey, data, ttl);
+        // Cache response data (will be ignored if Redis is not available)
+        setCache(cacheKey, data, ttl).catch(err => {
+          // Silently handle cache errors to not affect the response
+          console.debug('Cache set error (non-critical):', err.message);
+        });
         
         // Call original json method
         return originalJson.call(this, data);
@@ -38,7 +41,8 @@ export const cacheMiddleware = (ttl) => {
       
       next();
     } catch (error) {
-      console.error('Cache middleware error:', error);
+      console.warn('Cache middleware error, continuing without cache:', error.message);
+      // Continue processing the request even if cache fails
       next();
     }
   };

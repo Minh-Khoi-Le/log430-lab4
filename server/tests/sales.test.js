@@ -6,25 +6,25 @@ const prisma = new PrismaClient();
 
 // Test data
 const testStore = {
-  nom: "Sales Test Store",
-  adresse: "789 Sales Avenue"
+  name: "Sales Test Store",
+  address: "789 Sales Avenue"
 };
 
 const testClient = {
-  nom: "SalesTestClient",
+  name: "SalesTestClient",
   role: "client",
   password: "testpassword"
 };
 
 const testAdmin = {
-  nom: "SalesTestAdmin",
-  role: "gestionnaire",
+  name: "SalesTestAdmin",
+  role: "manager",
   password: "adminpassword"
 };
 
 const testProduct = {
-  nom: "Sales Test Product",
-  prix: 39.99,
+  name: "Sales Test Product",
+  price: 39.99,
   description: "A product for testing sales operations"
 };
 
@@ -41,10 +41,10 @@ const uniqueUsername = `TestAdmin_Sales_${Date.now()}`;
 
 // Setup and teardown
 beforeAll(async () => {
-  // Create a test user with gestionnaire role for authentication
+  // Create a test user with manager role for authentication
   const user = await prisma.user.create({
     data: {
-      nom: uniqueUsername,
+      name: uniqueUsername,
       role: "gestionnaire",
       password: "testpassword"
     }
@@ -54,7 +54,7 @@ beforeAll(async () => {
   const loginResponse = await request(app)
     .post('/api/v1/users/login')
     .send({
-      nom: uniqueUsername,
+      name: uniqueUsername,
       password: "testpassword"
     });
   
@@ -91,17 +91,17 @@ beforeAll(async () => {
 afterAll(async () => {
   // Clean up test data
   if (testSaleId) {
-    await prisma.vente.delete({
+    await prisma.sale.delete({
       where: { id: testSaleId }
     });
   }
   
   if (testStoreId) {
     await prisma.stock.deleteMany({
-      where: { magasinId: testStoreId }
+      where: { storeId: testStoreId }
     });
     
-    await prisma.magasin.delete({
+    await prisma.store.delete({
       where: { id: testStoreId }
     });
   }
@@ -114,7 +114,7 @@ afterAll(async () => {
   
   // Delete test user
   await prisma.user.delete({
-    where: { nom: uniqueUsername }
+    where: { name: uniqueUsername }
   });
   
   // Close Prisma connection
@@ -126,13 +126,13 @@ describe('Sales Operations', () => {
   // Test creating a sale
   test('Should create a new sale', async () => {
     const saleData = {
-      magasinId: storeId,
+      storeId: storeId,
       userId: clientId,
-      lignes: [
+      lines: [
         {
           productId: productId,
-          quantite: 2,
-          prixUnitaire: testProduct.prix
+          quantity: 2,
+          unitPrice: testProduct.price
         }
       ]
     };
@@ -144,13 +144,13 @@ describe('Sales Operations', () => {
     
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
-    expect(response.body).toHaveProperty('magasinId', storeId);
+    expect(response.body).toHaveProperty('storeId', storeId);
     expect(response.body).toHaveProperty('userId', clientId);
     expect(response.body).toHaveProperty('total');
-    expect(response.body.total).toBe(2 * testProduct.prix);
-    expect(response.body).toHaveProperty('lignes');
-    expect(Array.isArray(response.body.lignes)).toBe(true);
-    expect(response.body.lignes.length).toBe(1);
+    expect(response.body.total).toBe(2 * testProduct.price);
+    expect(response.body).toHaveProperty('lines');
+    expect(Array.isArray(response.body.lines)).toBe(true);
+    expect(response.body.lines.length).toBe(1);
     
     // Save sale ID for later tests
     saleId = response.body.id;
@@ -159,8 +159,8 @@ describe('Sales Operations', () => {
     const stockResponse = await request(app)
       .get(`/api/v1/stock/product/${productId}`);
     
-    const updatedStock = stockResponse.body.find(s => s.magasinId === storeId);
-    expect(updatedStock.quantite).toBe(48); // 50 - 2
+    const updatedStock = stockResponse.body.find(s => s.storeId === storeId);
+    expect(updatedStock.quantity).toBe(48); // 50 - 2
   });
   
   // Test getting all sales
@@ -208,32 +208,30 @@ describe('Sales Operations', () => {
     expect(foundSale).toBeDefined();
   });
   
-  // Test getting a specific sale by ID
-  test('Should retrieve a specific sale by ID', async () => {
-    const response = await request(app)
-      .get(`/api/v1/sales/${saleId}`)
-      .set('Authorization', `Bearer ${clientToken}`);
+  // Test refunding a sale
+  test('Should refund a sale', async () => {
+    const refundResponse = await request(app)
+      .post('/api/v1/sales/refund')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ saleId });
     
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('id', saleId);
-    expect(response.body).toHaveProperty('magasinId', storeId);
-    expect(response.body).toHaveProperty('userId', clientId);
-  });
-  
-  // Test generating sales report
-  test('Should generate a sales report', async () => {
-    const response = await request(app)
-      .get('/api/v1/sales/report')
-      .query({
-        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days ago
-        endDate: new Date().toISOString().split('T')[0] // today
-      })
+    expect(refundResponse.status).toBe(200);
+    expect(refundResponse.body).toHaveProperty('success', true);
+    expect(refundResponse.body).toHaveProperty('message', 'Refund processed successfully');
+    
+    // Verify stock was updated back to original level
+    const stockResponse = await request(app)
+      .get(`/api/v1/stock/product/${productId}`);
+    
+    const updatedStock = stockResponse.body.find(s => s.storeId === storeId);
+    expect(updatedStock.quantity).toBe(50); // Back to original
+    
+    // Verify sale is no longer in the list
+    const salesResponse = await request(app)
+      .get('/api/v1/sales')
       .set('Authorization', `Bearer ${adminToken}`);
     
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('totalSales');
-    expect(response.body).toHaveProperty('totalRevenue');
-    expect(response.body).toHaveProperty('salesByStore');
-    expect(Array.isArray(response.body.salesByStore)).toBe(true);
+    const foundSale = salesResponse.body.find(sale => sale.id === saleId);
+    expect(foundSale).toBeUndefined();
   });
 }); 

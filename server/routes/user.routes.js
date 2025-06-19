@@ -18,7 +18,7 @@ const router = express.Router();
  * Authenticate a user and return user details
  * 
  * Request body:
- * - nom: User name (required)
+ * - name: User name (required)
  * - password: User password (required)
  * 
  * Used by:
@@ -51,15 +51,15 @@ router.get('/:id', controller.get);
  * Create a new user
  * 
  * Request body:
- * - nom: User name (required)
- * - role: User role (required) - 'client' or 'gestionnaire'
+ * - name: User name (required)
+ * - role: User role (required) - 'client' or 'manager'
  * - password: User password (optional, defaults to "password")
  * 
  */
 router.post('/', controller.create);
 
 /**
- * GET /api/v1/users/:id/ventes
+ * GET /api/v1/users/:id/sales
  * 
  * Get sales history for a specific user (client)
  * 
@@ -67,6 +67,6 @@ router.post('/', controller.create);
  * - id: User ID
  * 
  */
-router.get('/:id/ventes', controller.ventes);
+router.get('/:id/sales', controller.sales);
 
 export default router; 

@@ -1,12 +1,12 @@
 /**
- * Magasin Controller
+ * Store Controller
  * 
  * The controller manages:
  * - Basic CRUD operations for stores
  * - Store inventory management
  */
 
-import MagasinDAO from '../dao/magasin.dao.js';
+import StoreDAO from '../dao/store.dao.js';
 import StockDAO from '../dao/stock.dao.js';
 
 
@@ -21,8 +21,8 @@ import StockDAO from '../dao/stock.dao.js';
  */
 export async function list(req, res, next) {
   try {
-    const magasins = await MagasinDAO.getAll();
-    res.json(magasins);
+    const stores = await StoreDAO.getAll();
+    res.json(stores);
   } catch (err) { next(err); }
 }
 
@@ -37,9 +37,9 @@ export async function list(req, res, next) {
  */
 export async function get(req, res, next) {
   try {
-    const magasin = await MagasinDAO.getById(req.params.id);
-    if (!magasin) return res.status(404).json({ error: 'Magasin non trouvé' });
-    res.json(magasin);
+    const store = await StoreDAO.getById(req.params.id);
+    if (!store) return res.status(404).json({ error: 'Store not found' });
+    res.json(store);
   } catch (err) { next(err); }
 }
 
@@ -55,8 +55,8 @@ export async function get(req, res, next) {
  */
 export async function create(req, res, next) {
   try {
-    const magasin = await MagasinDAO.createWithDefaultStock(req.body);
-    res.status(201).json(magasin);
+    const store = await StoreDAO.createWithDefaultStock(req.body);
+    res.status(201).json(store);
   } catch (err) { next(err); }
 }
 
@@ -72,8 +72,8 @@ export async function create(req, res, next) {
  */
 export async function update(req, res, next) {
   try {
-    const magasin = await MagasinDAO.update(req.params.id, req.body);
-    res.json(magasin);
+    const store = await StoreDAO.update(req.params.id, req.body);
+    res.json(store);
   } catch (err) { next(err); }
 }
 
@@ -89,7 +89,7 @@ export async function update(req, res, next) {
  */
 export async function remove(req, res, next) {
   try {
-    await MagasinDAO.delete(req.params.id);
+    await StoreDAO.delete(req.params.id);
     res.sendStatus(204);
   } catch (err) { next(err); }
 }
@@ -106,7 +106,7 @@ export async function remove(req, res, next) {
  */
 export async function stock(req, res, next) {
   try {
-    const stocks = await StockDAO.getStockByMagasin(req.params.magasinId);
+    const stocks = await StockDAO.getStockByStore(req.params.storeId);
     res.json(stocks);
   } catch (err) { next(err); }
 }

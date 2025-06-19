@@ -35,7 +35,7 @@ function Navbar() {
   const { user, setUser } = useUser();
   const [stores, setStores] = useState([]);
   // Calculate total items in cart for badge display
-  const totalItems = cart.reduce((acc, item) => acc + item.quantite, 0);
+  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
   const location = useLocation();
 
   // User menu state management
@@ -61,11 +61,11 @@ function Navbar() {
   const handleClose = () => setAnchorEl(null);
 
   // Handle store change
-  const handleStoreChange = (magasinId, magasinNom) => {
+  const handleStoreChange = (storeId, storeName) => {
     setUser((u) => ({ 
       ...u, 
-      magasinId: parseInt(magasinId),
-      magasinNom
+      storeId: parseInt(storeId),
+      storeName
     }));
     handleClose();
   };
@@ -94,15 +94,15 @@ function Navbar() {
       menuItems.push(<Divider key="divider-1" />);
       
       // Add store options
-      stores.forEach(magasin => {
+      stores.forEach(store => {
         menuItems.push(
           <MenuItem
-            key={`store-${magasin.id}`}
-            selected={user.magasinId === magasin.id}
-            onClick={() => handleStoreChange(magasin.id, magasin.nom)}
+            key={`store-${store.id}`}
+            selected={user.storeId === store.id}
+            onClick={() => handleStoreChange(store.id, store.name)}
             sx={{ pl: 3 }}
           >
-            {magasin.nom}
+            {store.name}
           </MenuItem>
         );
       });
@@ -162,7 +162,7 @@ function Navbar() {
           
           {/* Cart link - only for client role */}
           {user?.role === "client" && (
-            <Link to="/panier" style={{
+            <Link to="/cart" style={{
               color: "#fff",
               marginRight: 16,
               display: "flex",
@@ -193,17 +193,17 @@ function Navbar() {
         {/* Right side: User information and account menu */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {/* Display username if logged in */}
-          {user?.nom && (
+          {user?.name && (
             <Typography variant="body1" sx={{ color: "#fff", marginRight: 2, fontSize: 16 }}>
-              User: <b>{user.nom}</b>
+              User: <b>{user.name}</b>
             </Typography>
           )}
           
           {/* Display current store for client */}
-          {user?.role === "client" && user?.magasinNom && (
+          {user?.role === "client" && user?.storeName && (
             <Chip
               icon={<StoreIcon />}
-              label={user.magasinNom}
+              label={user.storeName}
               variant="outlined"
               sx={{ 
                 color: 'white', 
@@ -215,12 +215,12 @@ function Navbar() {
           )}
           
           {/* User account menu button */}
-          <Tooltip title="Mon compte">
+          <Tooltip title="My account">
             <IconButton
               color="inherit"
               onClick={handleMenu}
               size="large"
-              aria-label="Compte utilisateur"
+              aria-label="User account"
               sx={{
                 ml: 1,
                 background: "rgba(255,255,255,0.06)",
@@ -228,9 +228,9 @@ function Navbar() {
               }}
             >
               {/* Show first letter of username as avatar, or icon if not available */}
-              {user?.nom ? (
+              {user?.name ? (
                 <Avatar sx={{ bgcolor: "#3a8bff", width: 36, height: 36 }}>
-                  {user.nom[0]?.toUpperCase() || <AccountCircleIcon />}
+                  {user.name[0]?.toUpperCase() || <AccountCircleIcon />}
                 </Avatar>
               ) : (
                 <AccountCircleIcon fontSize="large" />

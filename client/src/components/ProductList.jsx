@@ -34,8 +34,8 @@ const ProductList = ({
   
   if (user?.role === "client" && hideUnavailable) {
     displayProducts = products.filter(product => {
-      const storeStock = product.stocks?.find(s => s.magasinId === user.magasinId);
-      return storeStock && storeStock.quantite > 0;
+      const storeStock = product.stocks?.find(s => s.storeId === user.storeId);
+      return storeStock && storeStock.quantity > 0;
     });
   }
   

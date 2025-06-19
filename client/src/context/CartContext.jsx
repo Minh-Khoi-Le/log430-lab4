@@ -35,11 +35,11 @@ export function CartProvider({ children }) {
       if (exist) {
         return cart.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantite: item.quantite + 1 }
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        return [...cart, { product, quantite: 1 }];
+        return [...cart, { product, quantity: 1 }];
       }
     });
   };
@@ -53,10 +53,10 @@ export function CartProvider({ children }) {
       cart
         .map((item) =>
           item.product.id === productId
-            ? { ...item, quantite: item.quantite - 1 }
+            ? { ...item, quantity: item.quantity - 1 }
             : item
         )
-        .filter((item) => item.quantite > 0)
+        .filter((item) => item.quantity > 0)
     );
   };
 

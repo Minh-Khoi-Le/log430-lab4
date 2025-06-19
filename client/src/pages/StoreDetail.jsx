@@ -136,12 +136,12 @@ function StoreDetail() {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <StoreIcon sx={{ fontSize: 40, color: '#3a8bff', mr: 2 }} />
           <Typography variant="h4" component="h1">
-            {store?.nom}
+            {store?.name}
           </Typography>
         </Box>
         
         <Typography variant="body1" color="text.secondary">
-          {store?.adresse || 'Address not specified'}
+          {store?.address || 'Address not specified'}
         </Typography>
         
         <Button 
@@ -191,19 +191,19 @@ function StoreDetail() {
                 <TableBody>
                   {stocks.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.product.nom}</TableCell>
+                      <TableCell>{item.product.name}</TableCell>
                       <TableCell>{item.product.description || '—'}</TableCell>
-                      <TableCell align="right">${item.product.prix.toFixed(2)}</TableCell>
+                      <TableCell align="right">${item.product.price.toFixed(2)}</TableCell>
                       <TableCell align="right">
                         <Box component="span" sx={{
                           fontWeight: 'bold',
-                          color: item.quantite < 10 ? 'error.main' : 'inherit'
+                          color: item.quantity < 10 ? 'error.main' : 'inherit'
                         }}>
-                          {item.quantite}
+                          {item.quantity}
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        ${(item.quantite * item.product.prix).toFixed(2)}
+                        ${(item.quantity * item.product.price).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -225,10 +225,10 @@ function StoreDetail() {
             <Alert severity="info">No recent sales</Alert>
           ) : (
             <Stack spacing={2}>
-              {sales.map((vente) => (
+              {sales.map((sale) => (
                 <Paper 
                   elevation={2} 
-                  key={vente.id} 
+                  key={sale.id} 
                   sx={{
                     overflow: 'hidden',
                     borderRadius: 2,
@@ -248,10 +248,10 @@ function StoreDetail() {
                     flexWrap: 'wrap'
                   }}>
                     <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                      Sale #{vente.id}
+                      Sale #{sale.id}
                     </Typography>
                     <Chip 
-                      label={`Total: ${vente.total.toFixed(2)} $`}
+                      label={`Total: ${sale.total.toFixed(2)} $`}
                       color="primary"
                       icon={<ReceiptIcon />}
                     />
@@ -261,22 +261,22 @@ function StoreDetail() {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <CalendarTodayIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {formatDate(vente.date)}
+                        {formatDate(sale.date)}
                       </Typography>
                     </Box>
                     
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <PersonIcon sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {vente.user?.nom || 'Unknown Customer'}
+                        {sale.user?.name || 'Unknown Customer'}
                       </Typography>
                     </Box>
 
-                    {vente.status && vente.status !== 'active' && (
+                    {sale.status && sale.status !== 'active' && (
                       <Chip 
                         size="small"
-                        label={vente.status === 'refunded' ? 'Refunded' : 'Partially Refunded'}
-                        color={vente.status === 'refunded' ? 'error' : 'warning'}
+                        label={sale.status === 'refunded' ? 'Refunded' : 'Partially Refunded'}
+                        color={sale.status === 'refunded' ? 'error' : 'warning'}
                         variant="outlined"
                       />
                     )}
@@ -289,9 +289,9 @@ function StoreDetail() {
                       Sold Items:
                     </Typography>
                     <List disablePadding>
-                      {vente.lignes.map((ligne) => (
+                      {sale.lines.map((line) => (
                         <ListItem 
-                          key={ligne.id} 
+                          key={line.id} 
                           disablePadding 
                           sx={{ 
                             py: 1,
@@ -303,16 +303,16 @@ function StoreDetail() {
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                  {ligne.product?.nom || 'Unknown Product'}
+                                  {line.product?.name || 'Unknown Product'}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  ${(ligne.quantite * ligne.prixUnitaire).toFixed(2)}
+                                  ${(line.quantity * line.unitPrice).toFixed(2)}
                                 </Typography>
                               </Box>
                             }
                             secondary={
                               <Typography variant="caption" color="text.secondary">
-                                {ligne.quantite} x ${ligne.prixUnitaire.toFixed(2)}
+                                {line.quantity} x ${line.unitPrice.toFixed(2)}
                               </Typography>
                             }
                           />

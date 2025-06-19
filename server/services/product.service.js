@@ -56,8 +56,8 @@ export async function get(id) {
 export async function create(data) {
   // Map API field names to database field names
   const productData = {
-    nom: data.name,
-    prix: data.price,
+    name: data.name,
+    price: data.price,
     description: data.description
   };
   
@@ -79,8 +79,8 @@ export async function update(id, data) {
   // Map API field names to database field names
   const productData = {};
   
-  if (data.name !== undefined) productData.nom = data.name;
-  if (data.price !== undefined) productData.prix = data.price;
+  if (data.name !== undefined) productData.name = data.name;
+  if (data.price !== undefined) productData.price = data.price;
   if (data.description !== undefined) productData.description = data.description;
   
   return dao.update(id, productData);

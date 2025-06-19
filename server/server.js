@@ -23,9 +23,9 @@ import os from 'os';
 // Import routes
 import userRoutes from './routes/user.routes.js';
 import productRoutes from './routes/product.routes.js';
-import magasinRoutes from './routes/magasin.routes.js';
+import storeRoutes from './routes/store.routes.js';
 import stockRoutes from './routes/stock.routes.js';
-import venteRoutes from './routes/vente.routes.js';
+import saleRoutes from './routes/sale.routes.js';
 import maisonMereRoutes from './routes/maisonmere.routes.js';
 import refundRoutes from './routes/refund.routes.js';
 
@@ -49,7 +49,7 @@ metricsEndpoint(app);
 
 // API Documentation Setup
 try {
-  const swaggerDoc = YAML.load(path.join(__dirname, './docs/magasinapi.yaml'));
+  const swaggerDoc = YAML.load(path.join(__dirname, './docs/storeapi.yaml'));
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
   console.log(' Api documentation available at http://localhost:3000/api/docs');
 } catch (err) {
@@ -64,9 +64,9 @@ app.get('/', (req, res) => {
 // API routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', productRoutes);
-app.use('/api/v1/stores', magasinRoutes);
+app.use('/api/v1/stores', storeRoutes);
 app.use('/api/v1/stocks', stockRoutes);
-app.use('/api/v1/sales', venteRoutes);
+app.use('/api/v1/sales', saleRoutes);
 app.use('/api/v1/maisonmere', maisonMereRoutes);
 app.use('/api/v1/refunds', refundRoutes);
 

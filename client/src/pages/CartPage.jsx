@@ -20,7 +20,7 @@ const CartPage = () => {
   const [receiptData, setReceiptData] = useState(null);
   
   // Calculate total price of all items in cart
-  const total = cart.reduce((sum, item) => sum + item.product.prix * item.quantite, 0);
+  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   /**
    * Handle checkout process
@@ -37,12 +37,12 @@ const CartPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientNom: user.nom,
-          magasinId: user.magasinId, 
-          panier: cart.map(item => ({
+          clientName: user.name,
+          storeId: user.storeId, 
+          cart: cart.map(item => ({
             productId: item.product.id,
-            quantite: item.quantite,
-            prix: item.product.prix
+            quantity: item.quantity,
+            price: item.product.price
           }))
         })
       });
@@ -56,7 +56,7 @@ const CartPage = () => {
           date: new Date().toLocaleString(),
           items: [...cart],
           total: total,
-          venteId: data.vente.id
+          saleId: data.sale.id
         });
         setShowReceipt(true);
         clearCart();
@@ -126,10 +126,10 @@ const CartPage = () => {
               >
                 {/* Item details */}
                 <span>
-                  <span style={{ fontWeight: 700 }}>{item.product.nom}</span>
-                  &nbsp;x {item.quantite}
+                  <span style={{ fontWeight: 700 }}>{item.product.name}</span>
+                  &nbsp;x {item.quantity}
                   <span style={{ color: "#6070FF", fontWeight: 400 }}>
-                    &nbsp;-&nbsp;${item.product.prix.toFixed(2)}
+                    &nbsp;-&nbsp;${item.product.price.toFixed(2)}
                   </span>
                 </span>
                 
@@ -199,94 +199,86 @@ const CartPage = () => {
             style={{
               margin: "24px auto 0 auto",
               display: "block",
-              padding: "14px 0",
-              width: "80%",
-              background: "linear-gradient(90deg,#376dff,#63b3ed)",
+              width: "100%",
+              padding: "14px 20px",
+              background: "#4568dc",
               color: "#fff",
               border: "none",
-              borderRadius: 30,
+              borderRadius: 10,
               fontWeight: 700,
-              fontSize: 22,
-              boxShadow: "0 4px 16px #63b3ed33",
-              transition: "background 0.2s, transform 0.1s",
-              cursor: loading ? "not-allowed" : "pointer",
-              letterSpacing: 0.2,
-              opacity: loading ? 0.7 : 1,
+              fontSize: 18,
+              cursor: "pointer",
+              transition: "background 0.2s",
             }}
-            disabled={loading}
             onClick={handleCheckout}
+            disabled={loading}
           >
-            {loading ? "Processing..." : "Confirm Purchase"}
+            {loading ? "Processing..." : "Checkout"}
           </button>
         </>
       )}
-
-      {/* Receipt Modal */}
-      <Modal 
-        open={showReceipt} 
-        title="Purchase Receipt" 
-        onClose={handleCloseReceipt}
-      >
-        {receiptData && (
-          <div style={{ padding: "0 10px" }}>
-            <div style={{ textAlign: "center", margin: "15px 0", color: "#376dff" }}>
-              <h3 style={{ margin: "5px 0" }}>Thank you for your purchase!</h3>
-              <p style={{ fontSize: "14px", color: "#555" }}>
-                Transaction #{receiptData.venteId} • {receiptData.date}
-              </p>
+      
+      {/* Receipt modal */}
+      {showReceipt && receiptData && (
+        <Modal onClose={handleCloseReceipt} open={showReceipt}>
+          <div style={{ padding: "20px 30px", maxWidth: 500 }}>
+            <h2 style={{ textAlign: "center", marginBottom: 20 }}>Purchase Receipt</h2>
+            <div style={{ marginBottom: 10 }}>
+              <strong>Date:</strong> {receiptData.date}
             </div>
-
-            <div style={{ 
-              borderTop: "1px dashed #ccc", 
-              borderBottom: "1px dashed #ccc",
-              padding: "15px 0",
-              margin: "15px 0"
-            }}>
+            <div style={{ marginBottom: 10 }}>
+              <strong>Sale ID:</strong> {receiptData.saleId}
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <strong>Store:</strong> {user.storeName}
+            </div>
+            
+            <h3 style={{ borderBottom: "1px solid #ddd", paddingBottom: 5 }}>Items:</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
               {receiptData.items.map((item) => (
-                <div key={item.product.id} style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between",
-                  margin: "8px 0",
-                  fontSize: "15px"
-                }}>
-                  <div>
-                    <span style={{ fontWeight: "bold" }}>{item.product.nom}</span>
-                    <span style={{ color: "#666" }}> x{item.quantite}</span>
+                <li key={item.product.id} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>
+                      <strong>{item.product.name}</strong> x {item.quantity}
+                    </span>
+                    <span>${(item.product.price * item.quantity).toFixed(2)}</span>
                   </div>
-                  <div>${(item.product.prix * item.quantite).toFixed(2)}</div>
-                </div>
+                </li>
               ))}
-            </div>
-
+            </ul>
+            
             <div style={{ 
-              display: "flex", 
-              justifyContent: "space-between",
+              borderTop: "1px solid #ddd", 
+              marginTop: 10, 
+              paddingTop: 10,
               fontWeight: "bold",
-              fontSize: "18px"
+              fontSize: 18,
+              display: "flex",
+              justifyContent: "space-between"
             }}>
-              <div>Total</div>
-              <div>${receiptData.total.toFixed(2)}</div>
+              <span>Total:</span>
+              <span>${receiptData.total.toFixed(2)}</span>
             </div>
-
-            <button 
-              onClick={handleCloseReceipt}
+            
+            <button
               style={{
-                width: "100%",
-                padding: "12px",
-                margin: "20px 0 10px 0",
-                background: "#376dff",
-                color: "white",
+                margin: "20px auto 0 auto",
+                display: "block",
+                padding: "10px 20px",
+                background: "#4568dc",
+                color: "#fff",
                 border: "none",
-                borderRadius: "8px",
+                borderRadius: 5,
                 fontWeight: "bold",
                 cursor: "pointer"
               }}
+              onClick={handleCloseReceipt}
             >
-              Close
+              Continue Shopping
             </button>
           </div>
-        )}
-      </Modal>
+        </Modal>
+      )}
     </div>
   );
 };

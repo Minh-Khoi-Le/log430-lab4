@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
  */
 export async function create(req, res, next) {
   try {
-    const { saleId, reason, items, userId, magasinId } = req.body;
+    const { saleId, reason, items, userId, storeId } = req.body;
     
     // Validate required fields
     if (!saleId) {
@@ -23,50 +23,50 @@ export async function create(req, res, next) {
     }
     
     // Find the sale to refund
-    const sale = await prisma.vente.findUnique({
+    const sale = await prisma.sale.findUnique({
       where: { id: parseInt(saleId) },
       include: { 
-        lignes: { include: { product: true } },
-        magasin: true,
+        lines: { include: { product: true } },
+        store: true,
         user: true
       }
     });
     
     if (!sale) {
-      return res.status(404).json({ error: "Vente non trouvée" });
+      return res.status(404).json({ error: "Sale not found" });
     }
     
     // Check if already refunded
     if (sale.status === 'refunded') {
-      return res.status(400).json({ error: "Cette vente a déjà été remboursée" });
+      return res.status(400).json({ error: "This sale has already been refunded" });
     }
     
     // If no specific items were selected for refund, refund all items
-    const refundItems = items || sale.lignes.map(item => ({
+    const refundItems = items || sale.lines.map(item => ({
       productId: item.productId,
-      quantite: item.quantite,
-      prixUnitaire: item.prixUnitaire
+      quantity: item.quantity,
+      unitPrice: item.unitPrice
     }));
     
     // Calculate refund total
     const refundTotal = refundItems.reduce(
-      (sum, item) => sum + (item.quantite * item.prixUnitaire), 
+      (sum, item) => sum + (item.quantity * item.unitPrice), 
       0
     );
     
     // Create the refund using the DAO
     const refund = await RefundDAO.create({
-      venteId: saleId,
-      magasinId: magasinId || sale.magasinId,
+      saleId: saleId,
+      storeId: storeId || sale.storeId,
       userId: userId || sale.userId,
-      lignes: refundItems,
+      lines: refundItems,
       total: refundTotal,
       reason
     });
     
     res.status(201).json({
       success: true,
-      message: "Remboursement effectué avec succès",
+      message: "Refund processed successfully",
       refund
     });
   } catch (err) {

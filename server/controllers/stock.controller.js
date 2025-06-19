@@ -40,7 +40,7 @@ export async function getByProduct(req, res, next) {
 export async function getByStore(req, res, next) {
   try {
     const storeId = req.params.storeId;
-    const stocks = await stockDAO.getStockByMagasin(storeId);
+    const stocks = await stockDAO.getStockByStore(storeId);
     res.json(stocks);
   } catch (error) {
     next(error);
@@ -59,13 +59,13 @@ export async function getByStore(req, res, next) {
 export async function updateStock(req, res, next) {
   try {
     const { productId } = req.params;
-    const { magasinId, quantite } = req.body;
+    const { storeId, quantity } = req.body;
     
-    if (!magasinId || quantite === undefined) {
+    if (!storeId || quantity === undefined) {
       throw new ApiError(400, 'Store ID and quantity are required');
     }
     
-    const stock = await stockDAO.updateStock(productId, magasinId, quantite);
+    const stock = await stockDAO.updateStock(productId, storeId, quantity);
     res.json(stock);
   } catch (error) {
     next(error);

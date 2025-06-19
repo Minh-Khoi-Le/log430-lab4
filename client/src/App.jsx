@@ -47,7 +47,7 @@ function MainApp() {
         {/* Shopping cart - only accessible to users with client role */}
         {user.role === "client" && (
           <>
-            <Route path="/panier" element={<CartPage />} />
+            <Route path="/cart" element={<CartPage />} />
             <Route path="/history" element={<History />} />
           </>
         )}

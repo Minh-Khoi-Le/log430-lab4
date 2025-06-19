@@ -26,12 +26,12 @@ class UserDAO {
   /**
    * Get a user by name
    * 
-   * @param {string} nom - User name
+   * @param {string} name - User name
    * @returns {Promise<Object|null>} User object or null if not found
    */
-  static async getByName(nom) {
+  static async getByName(name) {
     return prisma.user.findUnique({
-      where: { nom }
+      where: { name }
     });
   }
 
@@ -44,7 +44,7 @@ class UserDAO {
   static async create(data) {
     return prisma.user.create({
       data: {
-        nom: data.nom,
+        name: data.name,
         role: data.role,
         password: data.password || 'password' // Default password if not provided
       }

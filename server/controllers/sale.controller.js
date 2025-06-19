@@ -1,4 +1,4 @@
-import VenteDAO from '../dao/vente.dao.js';
+import SaleDAO   from '../dao/sale.dao.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -11,51 +11,51 @@ const prisma = new PrismaClient();
  */
 export async function create(req, res, next) {
   try {
-    let { magasinId, userId, lignes, clientNom, panier } = req.body;
+    let { storeId, userId, lines, clientName, cart } = req.body;
 
-    // If userId is not provided, use clientNom to find the user
-    if (!userId && clientNom) {
-      let user = await prisma.user.findFirst({ where: { nom: clientNom } });
+    // If userId is not provided, use clientName to find the user
+    if (!userId && clientName) {
+      let user = await prisma.user.findFirst({ where: { name: clientName } });
       if (!user) {
-        return res.status(400).json({ error: "Utilisateur non trouvé" });
+        return res.status(400).json({ error: "User not found" });
       }
       userId = user.id;
     }
 
-    // If lignes is not provided, convert panier to lignes
-    if (!lignes && panier) {
-      lignes = panier.map(item => ({
+    // If lines is not provided, convert cart to lines
+    if (!lines && cart) {
+      lines = cart.map(item => ({
         productId: item.productId,
-        quantite: item.quantite,
-        prixUnitaire: item.prix
+        quantity: item.quantity,
+        unitPrice: item.price
       }));
     }
 
-    if (!magasinId || !userId || !lignes) {
+    if (!storeId || !userId || !lines) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check if magasinId exists
-    const magasin = await prisma.magasin.findUnique({ where: { id: parseInt(magasinId) } });
-    if (!magasin) {
-      return res.status(400).json({ error: "Le magasin sélectionné n'existe pas." });
+    // Check if storeId exists
+    const store = await prisma.store.findUnique({ where: { id: parseInt(storeId) } });
+    if (!store) {
+      return res.status(400).json({ error: "The selected store does not exist." });
     }
 
     // Check stock availability for each product
-    for (const ligne of lignes) {
+    for (const line of lines) {
       const stock = await prisma.stock.findFirst({
         where: { 
-          productId: parseInt(ligne.productId), 
-          magasinId: parseInt(magasinId) 
+          productId: parseInt(line.productId), 
+          storeId: parseInt(storeId) 
         }
       });
       
-      if (!stock || stock.quantite < ligne.quantite) {
+      if (!stock || stock.quantity < line.quantity) {
         const product = await prisma.product.findUnique({ 
-          where: { id: parseInt(ligne.productId) } 
+          where: { id: parseInt(line.productId) } 
         });
         return res.status(400).json({ 
-          error: `Stock insuffisant pour ${product ? product.nom : 'un produit'}`
+          error: `Insufficient stock for ${product ? product.name : 'a product'}`
         });
       }
     }
@@ -63,44 +63,44 @@ export async function create(req, res, next) {
     // Use a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       // Calculate total
-      const total = lignes.reduce((sum, l) => sum + l.quantite * l.prixUnitaire, 0);
+      const total = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
       
       // Create the sale
-      const vente = await tx.vente.create({
+      const sale = await tx.sale.create({
         data: {
-          magasinId: parseInt(magasinId),
+          storeId: parseInt(storeId),
           userId: parseInt(userId),
           total: parseFloat(total),
-          lignes: {
-            create: lignes.map(ligne => ({
-              productId: parseInt(ligne.productId),
-              quantite: parseInt(ligne.quantite),
-              prixUnitaire: parseFloat(ligne.prixUnitaire)
+          lines: {
+            create: lines.map(line => ({
+              productId: parseInt(line.productId),
+              quantity: parseInt(line.quantity),
+              unitPrice: parseFloat(line.unitPrice)
             }))
           }
         },
-        include: { lignes: true }
+        include: { lines: true }
       });
       
       // Update stock quantities
-      for (const ligne of lignes) {
+      for (const line of lines) {
         await tx.stock.updateMany({
           where: { 
-            productId: parseInt(ligne.productId), 
-            magasinId: parseInt(magasinId) 
+            productId: parseInt(line.productId), 
+            storeId: parseInt(storeId) 
           },
           data: { 
-            quantite: { 
-              decrement: parseInt(ligne.quantite) 
+            quantity: { 
+              decrement: parseInt(line.quantity) 
             } 
           }
         });
       }
       
-      return vente;
+      return sale;
     });
 
-    res.status(201).json({ success: true, vente: result });
+    res.status(201).json({ success: true, sale: result });
   } catch (err) {
     next(err);
   }
@@ -117,8 +117,8 @@ export async function create(req, res, next) {
  */
 export async function list(req, res, next) {
   try {
-    const ventes = await VenteDAO.getAll();
-    res.json(ventes);
+    const sales = await SaleDAO.getAll();
+    res.json(sales);
   } catch (err) { next(err); }
 }
 
@@ -140,8 +140,8 @@ export async function byClient(req, res, next) {
       return res.status(400).json({ error: "Client ID is required" });
     }
     
-    const ventes = await VenteDAO.getByUser(clientId);
-    res.json(ventes);
+    const sales = await SaleDAO.getByUser(clientId);
+    res.json(sales);
   } catch (err) { next(err); }
 }
 
@@ -159,8 +159,8 @@ export async function byClient(req, res, next) {
 export async function byStore(req, res, next) {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
-    const ventes = await VenteDAO.getByStore(req.params.storeId, limit);
-    res.json(ventes);
+    const sales = await SaleDAO.getByStore(req.params.storeId, limit);
+    res.json(sales);
   } catch (err) { next(err); }
 }
 
@@ -182,43 +182,43 @@ export async function refund(req, res, next) {
     }
 
     // Find the sale with all its details
-    const sale = await prisma.vente.findUnique({
+    const sale = await prisma.sale.findUnique({
       where: { id: parseInt(saleId) },
       include: { 
-        lignes: true,
-        magasin: true,
+        lines: true,
+        store: true,
         user: true
       }
     });
     
     if (!sale) {
-      return res.status(404).json({ error: "Vente non trouvée" });
+      return res.status(404).json({ error: "Sale not found" });
     }
 
     // Execute refund in a transaction to ensure consistency
     const result = await prisma.$transaction(async (tx) => {
       // Return stock for each product in the sale
-      for (const ligne of sale.lignes) {
+      for (const line of sale.lines) {
         await tx.stock.updateMany({
           where: { 
-            productId: ligne.productId, 
-            magasinId: sale.magasinId 
+            productId: line.productId, 
+            storeId: sale.storeId 
           },
           data: { 
-            quantite: { 
-              increment: ligne.quantite 
+            quantity: { 
+              increment: line.quantity 
             } 
           }
         });
       }
       
       // Delete the sale lines first (due to foreign key constraints)
-      await tx.vente_ligne.deleteMany({
-        where: { venteId: sale.id }
+      await tx.saleLine.deleteMany({
+        where: { saleId: sale.id }
       });
       
       // Delete the sale
-      const deletedSale = await tx.vente.delete({
+      const deletedSale = await tx.sale.delete({
         where: { id: sale.id }
       });
       
@@ -227,7 +227,7 @@ export async function refund(req, res, next) {
 
     res.status(200).json({ 
       success: true, 
-      message: "Remboursement effectué avec succès",
+      message: "Refund processed successfully",
       refundedSale: result
     });
   } catch (err) {

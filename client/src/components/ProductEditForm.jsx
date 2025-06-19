@@ -37,8 +37,8 @@ import {
 const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) => {
   // Local state for form fields to enable controlled inputs
   const [form, setForm] = useState({ 
-    nom: "",
-    prix: 0,
+    name: "",
+    price: 0,
     description: ""
   });
   
@@ -55,8 +55,8 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
     if (product) {
       // Set base product data
       setForm({
-        nom: product.nom || "",
-        prix: product.prix || 0,
+        name: product.name || "",
+        price: product.price || 0,
         description: product.description || ""
       });
       
@@ -109,7 +109,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
   const handleStockChange = (stockId, value) => {
     const updatedStocks = stocks.map(stock => {
       if (stock.id === stockId) {
-        return { ...stock, quantite: parseInt(value) || 0 };
+        return { ...stock, quantity: parseInt(value) || 0 };
       }
       return stock;
     });
@@ -135,8 +135,8 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
             'Authorization': `Bearer ${user.token || 'dummy-token'}`
           },
           body: JSON.stringify({
-            magasinId: stock.magasinId,
-            quantite: stock.quantite
+            storeId: stock.storeId,
+            quantity: stock.quantity
           })
         })
       );
@@ -162,7 +162,7 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
   const handleSubmit = (e) => {
     e.preventDefault();
     // Validate required fields
-    if (!form.nom || form.prix === "") {
+    if (!form.name || form.price === "") {
       alert("Name and price are required!");
       return;
     }
@@ -170,8 +170,8 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
     // Prepare product data
     const productData = {
       ...(isNewProduct ? {} : { id: product.id }),
-      nom: form.nom,
-      prix: parseFloat(form.prix),
+      name: form.name,
+      price: parseFloat(form.price),
       description: form.description
     };
     
@@ -183,10 +183,10 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
     <form onSubmit={handleSubmit} style={{ minWidth: 280, width: '100%', maxWidth: 600 }}>
       {/* Product name field */}
       <div style={{ marginBottom: 18 }}>
-        <label>Nom<br/>
+        <label>Name<br/>
           <input
-            name="nom"
-            value={form.nom || ""}
+            name="name"
+            value={form.name || ""}
             onChange={handleChange}
             style={{ width: "100%", padding: 6 }}
             required
@@ -197,16 +197,17 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
       
       {/* Product price field */}
       <div style={{ marginBottom: 18 }}>
-        <label>Prix<br/>
+        <label>Price<br/>
           <input
-            name="prix"
+            name="price"
             type="number"
-            step="0.01"
-            value={form.prix || 0}
+            value={form.price || ""}
             onChange={handleChange}
             style={{ width: "100%", padding: 6 }}
             required
-            placeholder="Prix"
+            placeholder="Product price"
+            step="0.01"
+            min="0"
           />
         </label>
       </div>
@@ -218,55 +219,45 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
             name="description"
             value={form.description || ""}
             onChange={handleChange}
-            style={{ 
-              width: "100%", 
-              padding: 6, 
-              minHeight: 80,
-              fontFamily: 'inherit',
-              resize: 'vertical'
-            }}
+            style={{ width: "100%", padding: 6, minHeight: 80 }}
             placeholder="Product description (optional)"
           />
         </label>
       </div>
       
-      {/* Product stocks table - only show for existing products */}
+      {/* Stock management section (only for existing products) */}
       {!isNewProduct && (
-        <div style={{ marginBottom: 18 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Stock Management by Store
+        <div style={{ marginTop: 24 }}>
+          <Typography variant="h6" gutterBottom>
+            Stock Management
           </Typography>
           
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-              <CircularProgress size={24} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+              <CircularProgress />
             </Box>
-          ) : stocks.length === 0 ? (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              No stock available for this product
-            </Typography>
           ) : (
             <>
               <TableContainer component={Paper} sx={{ mb: 2 }}>
-                <Table size="small">
+                <Table>
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell><b>Magasin</b></TableCell>
-                      <TableCell align="right"><b>Quantité</b></TableCell>
+                    <TableRow>
+                      <TableCell>Store</TableCell>
+                      <TableCell align="right">Quantity</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {stocks.map((stock) => (
                       <TableRow key={stock.id}>
-                        <TableCell>{stock.magasin.nom}</TableCell>
+                        <TableCell>{stock.store.name}</TableCell>
                         <TableCell align="right">
                           <TextField
                             type="number"
-                            size="small"
-                            value={stock.quantite}
+                            value={stock.quantity}
                             onChange={(e) => handleStockChange(stock.id, e.target.value)}
-                            inputProps={{ min: 0, style: { textAlign: 'right' } }}
-                            sx={{ width: 100 }}
+                            InputProps={{ inputProps: { min: 0 } }}
+                            variant="outlined"
+                            size="small"
                           />
                         </TableCell>
                       </TableRow>
@@ -275,38 +266,43 @@ const ProductEditForm = ({ product, onSave, onCancel, isNewProduct = false }) =>
                 </Table>
               </TableContainer>
               
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-                <Button 
-                  variant="outlined" 
-                  size="small" 
-                  onClick={saveStockChanges}
-                  disabled={loading}
-                  color={saveSuccess ? "success" : "primary"}
-                >
-                  {loading ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
-                  {saveSuccess ? "Stocks saved" : "Save stocks"}
-                </Button>
-              </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={saveStockChanges}
+                disabled={loading}
+                sx={{ mr: 1 }}
+              >
+                Update Stock
+              </Button>
+              
+              {saveSuccess && (
+                <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                  Stock updated successfully!
+                </Typography>
+              )}
             </>
           )}
         </div>
       )}
       
-      {/* Instructions for new products */}
-      {isNewProduct && (
-        <div style={{ marginBottom: 18 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-            After creating the product, you will be able to manage its stock by store.
-          </Typography>
-        </div>
-      )}
-      
       {/* Form action buttons */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 18 }}>
-        <button type="button" className="btn" onClick={onCancel}>Cancel</button>
-        <button type="submit" className="btn btn-danger">
-          {isNewProduct ? "Create Product" : "Save Product"}
-        </button>
+      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={onCancel}
+          sx={{ mr: 1 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          type="submit"
+        >
+          {isNewProduct ? "Create Product" : "Save Changes"}
+        </Button>
       </div>
     </form>
   );

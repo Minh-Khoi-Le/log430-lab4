@@ -1,17 +1,52 @@
 import Redis from 'ioredis';
 import { Counter } from 'prom-client';
 
-// Create Redis client
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || '',
-  retryStrategy: (times) => Math.min(times * 50, 2000)
-});
+// Check if Redis is disabled via environment variable
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true';
 
-// Handle Redis connection events
-redisClient.on('connect', () => console.log('Redis client connected'));
-redisClient.on('error', (err) => console.error('Redis client error:', err));
+// Create Redis client with error handling
+let redisClient = null;
+let redisConnected = false;
+
+if (!REDIS_DISABLED) {
+  try {
+    redisClient = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT || 6379,
+      password: process.env.REDIS_PASSWORD || '',
+      retryStrategy: (times) => Math.min(times * 50, 2000),
+      lazyConnect: true, // Don't connect immediately
+      maxRetriesPerRequest: 3
+    });
+
+    // Handle Redis connection events
+    redisClient.on('connect', () => {
+      console.log('Redis client connected');
+      redisConnected = true;
+    });
+    
+    redisClient.on('error', (err) => {
+      console.warn('Redis client error:', err.message);
+      redisConnected = false;
+    });
+    
+    redisClient.on('close', () => {
+      console.log('Redis client disconnected');
+      redisConnected = false;
+    });
+
+    // Attempt to connect
+    redisClient.connect().catch(err => {
+      console.warn('Redis connection failed, running without cache:', err.message);
+      redisConnected = false;
+    });
+  } catch (error) {
+    console.warn('Redis initialization failed, running without cache:', error.message);
+    redisConnected = false;
+  }
+} else {
+  console.log('Redis disabled via REDIS_DISABLED environment variable');
+}
 
 // Cache TTL in seconds
 const DEFAULT_TTL = 60 * 5; // 5 minutes
@@ -41,6 +76,10 @@ export const cacheMetrics = {
  * @returns {Promise<any>} - Cached data or null if not found
  */
 export const getCache = async (key) => {
+  if (!redisClient || !redisConnected) {
+    return null;
+  }
+  
   try {
     const data = await redisClient.get(key);
     
@@ -68,6 +107,10 @@ export const getCache = async (key) => {
  * @param {number} [ttl=DEFAULT_TTL] - Time to live in seconds
  */
 export const setCache = async (key, data, ttl = DEFAULT_TTL) => {
+  if (!redisClient || !redisConnected) {
+    return;
+  }
+  
   try {
     await redisClient.set(key, JSON.stringify(data), 'EX', ttl);
   } catch (error) {
@@ -81,6 +124,10 @@ export const setCache = async (key, data, ttl = DEFAULT_TTL) => {
  * @param {string} key - Cache key
  */
 export const deleteCache = async (key) => {
+  if (!redisClient || !redisConnected) {
+    return;
+  }
+  
   try {
     await redisClient.del(key);
   } catch (error) {
@@ -94,6 +141,10 @@ export const deleteCache = async (key) => {
  * @param {string} pattern - Key pattern to delete
  */
 export const deleteCachePattern = async (pattern) => {
+  if (!redisClient || !redisConnected) {
+    return;
+  }
+  
   try {
     const keys = await redisClient.keys(pattern);
     if (keys.length > 0) {

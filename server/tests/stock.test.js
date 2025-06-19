@@ -12,8 +12,8 @@ const testProduct = {
 };
 
 const testStore = {
-  nom: "Test Store",
-  adresse: "123 Test Street"
+  name: "Test Store",
+  address: "123 Test Street"
 };
 
 let testProductId;
@@ -28,7 +28,7 @@ beforeAll(async () => {
    // Create a test user with gestionnaire role for authentication
   const user = await prisma.user.create({
     data: {
-      nom: uniqueUsername,
+      name: uniqueUsername,
       role: "gestionnaire",
       password: "testpassword"
     }
@@ -37,7 +37,7 @@ beforeAll(async () => {
   const loginResponse = await request(app)
     .post('/api/v1/users/login')
     .send({
-      nom: uniqueUsername,
+      name: uniqueUsername,
       password: "testpassword"
     });
   
@@ -65,10 +65,10 @@ afterAll(async () => {
   // Clean up test data
   if (testStoreId) {
     await prisma.stock.deleteMany({
-      where: { magasinId: testStoreId }
+      where: { storeId: testStoreId }
     });
     
-    await prisma.magasin.delete({
+    await prisma.store.delete({
       where: { id: testStoreId }
     });
   }
@@ -81,7 +81,7 @@ afterAll(async () => {
   
   // Delete test user
   await prisma.user.delete({
-    where: { nom: uniqueUsername }
+    where: { name: uniqueUsername }
   });
   
   // Close Prisma connection
@@ -99,9 +99,9 @@ describe('Stock Operations', () => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
     
-    const stockEntry = response.body.find(s => s.productId === testProductId && s.magasinId === testStoreId);
+    const stockEntry = response.body.find(s => s.productId === testProductId && s.storeId === testStoreId);
     expect(stockEntry).toBeDefined();
-    expect(stockEntry.quantite).toBe(10);
+    expect(stockEntry.quantity).toBe(10);
   });
   
   // Test updating stock quantity
@@ -115,7 +115,7 @@ describe('Stock Operations', () => {
     
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id', testProductId);
-    expect(response.body.quantite).toBe(updatedQuantity);
+    expect(response.body.quantity).toBe(updatedQuantity);
   });
   
   // Test getting stock for a store
@@ -138,7 +138,7 @@ describe('Stock Operations', () => {
       .send({ quantity: 0 });
     
     expect(response.status).toBe(200);
-    expect(response.body.quantite).toBe(0);
+    expect(response.body.quantity).toBe(0);
     
     // Verify availability is now false
     const availabilityResponse = await request(app)

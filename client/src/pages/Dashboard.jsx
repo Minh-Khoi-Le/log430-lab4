@@ -114,7 +114,7 @@ const Dashboard = () => {
     
     try {
       const response = await fetch(
-        `http://localhost:3000/api/v1/maisonmere/ventes-consolidees?debut=${startDate}&fin=${endDate}`
+        `http://localhost:3000/api/v1/maisonmere/consolidated-sales?startDate=${startDate}&endDate=${endDate}`
       );
       
       if (!response.ok) {
@@ -142,7 +142,7 @@ const Dashboard = () => {
   const getActiveSalesCount = (store) => {
     if (!store || !refundStats) return 0;
     const refund = getRefundStatsForStore(store.id);
-    return Math.max(0, store.ventesTotal - refund.count);
+    return Math.max(0, store.totalSales - refund.count);
   };
 
   return (
@@ -244,14 +244,14 @@ const Dashboard = () => {
               )}
               
               {/* Store data rows */}
-              {stats?.map((magasin) => {
-                const refundData = getRefundStatsForStore(magasin.id);
-                const activeSales = getActiveSalesCount(magasin);
+              {stats?.map((store) => {
+                const refundData = getRefundStatsForStore(store.id);
+                const activeSales = getActiveSalesCount(store);
                 
                 return (
-                <TableRow key={magasin.id}>
-                  <TableCell sx={{ fontWeight: 600 }}>{magasin.nom}</TableCell>
-                  <TableCell align="right">{magasin.ventesTotal}</TableCell>
+                <TableRow key={store.id}>
+                  <TableCell sx={{ fontWeight: 600 }}>{store.name}</TableCell>
+                  <TableCell align="right">{store.totalSales}</TableCell>
                   <TableCell align="right">
                     {refundData.count > 0 ? (
                       <Chip 
@@ -268,21 +268,21 @@ const Dashboard = () => {
                   <TableCell align="right" sx={{ fontWeight: 500, color: 'primary.main' }}>
                     {activeSales}
                   </TableCell>
-                  <TableCell align="right">{magasin.produitsVendus}</TableCell>
+                  <TableCell align="right">{store.productsSold}</TableCell>
                   <TableCell align="right">
                     <b style={{ color: "#127c50" }}>
-                      {magasin.chiffreAffaires.toFixed(2)} €
+                      {store.revenue.toFixed(2)} €
                     </b>
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Voir les détails">
+                    <Tooltip title="View details">
                       <Button
                         variant="outlined"
                         size="small"
                         startIcon={<VisibilityIcon />}
-                        onClick={() => handleStoreSelect(magasin.id)}
+                        onClick={() => handleStoreSelect(store.id)}
                       >
-                        Détails
+                        Details
                       </Button>
                     </Tooltip>
                   </TableCell>
@@ -297,7 +297,7 @@ const Dashboard = () => {
       {stats && stats.length > 0 && (
         <Box sx={{ mt: 5, p: 4, background: "#fff", borderRadius: 3, boxShadow: 2 }}>
           <Typography variant="h6" align="center" sx={{ mb: 3, fontWeight: 600, color: "#2d3240" }}>
-            Répartition des ventes par magasin
+            Sales Distribution by Store
           </Typography>
           {/* Responsive chart container */}
           <ResponsiveContainer width="100%" height={320}>
@@ -305,11 +305,11 @@ const Dashboard = () => {
               {/* Pie chart showing sales distribution */}
               <Pie
                 data={stats.map(store => ({
-                  nom: store.nom,
-                  ventesTotal: getActiveSalesCount(store) // Use active sales for the chart
+                  name: store.name,
+                  totalSales: getActiveSalesCount(store) // Use active sales for the chart
                 }))}
-                dataKey="ventesTotal"
-                nameKey="nom"
+                dataKey="totalSales"
+                nameKey="name"
                 cx="50%"
                 cy="50%"
                 outerRadius={110}
@@ -322,7 +322,7 @@ const Dashboard = () => {
                 ))}
               </Pie>
               {/* Interactive tooltips and legend */}
-              <RechartsTooltip formatter={(value) => `${value} ventes actives`} />
+              <RechartsTooltip formatter={(value) => `${value} active sales`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -340,7 +340,7 @@ const Dashboard = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">
               <AssessmentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Rapport de ventes consolidées
+              Consolidated Sales Report
             </Typography>
             <IconButton onClick={handleCloseReportDialog}>
               <CloseIcon />
@@ -353,7 +353,7 @@ const Dashboard = () => {
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={5}>
               <TextField
-                label="Date de début"
+                label="Start date"
                 type="date"
                 fullWidth
                 value={startDate}
@@ -363,7 +363,7 @@ const Dashboard = () => {
             </Grid>
             <Grid item xs={12} sm={5}>
               <TextField
-                label="Date de fin"
+                label="End date"
                 type="date"
                 fullWidth
                 value={endDate}
@@ -379,7 +379,7 @@ const Dashboard = () => {
                 disabled={loading}
                 sx={{ height: '56px' }}
               >
-                {loading ? <CircularProgress size={24} /> : "Générer"}
+                {loading ? <CircularProgress size={24} /> : "Generate"}
               </Button>
             </Grid>
           </Grid>
@@ -392,7 +392,7 @@ const Dashboard = () => {
             <>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1">
-                  <b>{reportData.length}</b> ventes trouvées entre le <b>{new Date(startDate).toLocaleDateString()}</b> et le <b>{new Date(endDate).toLocaleDateString()}</b>
+                  <b>{reportData.length}</b> sales found between <b>{new Date(startDate).toLocaleDateString()}</b> and <b>{new Date(endDate).toLocaleDateString()}</b>
                 </Typography>
               </Box>
               
@@ -401,49 +401,49 @@ const Dashboard = () => {
                   <TableHead>
                     <TableRow sx={{ background: "#f7f8fa" }}>
                       <TableCell><b>Date</b></TableCell>
-                      <TableCell><b>Magasin</b></TableCell>
+                      <TableCell><b>Store</b></TableCell>
                       <TableCell><b>Client</b></TableCell>
-                      <TableCell><b>Statut</b></TableCell>
+                      <TableCell><b>Status</b></TableCell>
                       <TableCell align="right"><b>Total</b></TableCell>
-                      <TableCell align="right"><b>Produits</b></TableCell>
+                      <TableCell align="right"><b>Products</b></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {reportData.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center">Aucune vente trouvée pour cette période</TableCell>
+                        <TableCell colSpan={6} align="center">No sales found for this period</TableCell>
                       </TableRow>
                     ) : (
                       // Display only current page of data
                       reportData
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((vente) => {
+                        .map((sale) => {
                           // Calculate total for this sale
                           let total = 0;
                           let products = 0;
-                          vente.lignes.forEach(ligne => {
-                            total += ligne.prixUnitaire * ligne.quantite;
-                            products += ligne.quantite;
+                          sale.lines.forEach(line => {
+                            total += line.unitPrice * line.quantity;
+                            products += line.quantity;
                           });
                           
                           return (
-                            <TableRow key={vente.id}>
-                              <TableCell>{new Date(vente.date).toLocaleDateString()}</TableCell>
-                              <TableCell>{vente.magasin.nom}</TableCell>
-                              <TableCell>{`${vente.user?.nom}`}</TableCell>
+                            <TableRow key={sale.id}>
+                              <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>
+                              <TableCell>{sale.store.name}</TableCell>
+                              <TableCell>{`${sale.user?.name}`}</TableCell>
                               <TableCell>
-                                {vente.status === 'active' ? (
+                                {sale.status === 'active' ? (
                                   <Chip size="small" color="primary" label="Active" />
-                                ) : vente.status === 'refunded' ? (
-                                  <Chip size="small" color="error" label="Remboursée" />
+                                ) : sale.status === 'refunded' ? (
+                                  <Chip size="small" color="error" label="Refunded" />
                                 ) : (
-                                  <Chip size="small" color="warning" label="Partiellement remboursée" />
+                                  <Chip size="small" color="warning" label="Partially refunded" />
                                 )}
                               </TableCell>
                               <TableCell align="right">
                                 <span style={{ 
-                                  color: vente.status === 'active' ? "#127c50" : 
-                                         vente.status === 'refunded' ? "#d32f2f" : "#ed6c02",
+                                  color: sale.status === 'active' ? "#127c50" : 
+                                         sale.status === 'refunded' ? "#d32f2f" : "#ed6c02",
                                   fontWeight: 600 
                                 }}>
                                   {total.toFixed(2)} €
@@ -466,7 +466,7 @@ const Dashboard = () => {
                   onPageChange={handleChangePage}
                   rowsPerPage={rowsPerPage}
                   rowsPerPageOptions={[10]}
-                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
                   labelRowsPerPage=""
                 />
               )}
@@ -475,7 +475,7 @@ const Dashboard = () => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={handleCloseReportDialog}>Fermer</Button>
+          <Button onClick={handleCloseReportDialog}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

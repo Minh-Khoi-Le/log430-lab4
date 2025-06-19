@@ -11,10 +11,10 @@ import { useUser } from "../context/UserContext";
 
 function Login() {
   // State for form fields
-  const [nom, setNom] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [magasinId, setMagasinId] = useState("");
-  const [magasins, setMagasins] = useState([]);
+  const [storeId, setStoreId] = useState("");
+  const [stores, setStores] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { setUser } = useUser();
@@ -22,9 +22,25 @@ function Login() {
   // Fetch the list of stores when component mounts
   useEffect(() => {
     fetch("http://localhost:3000/api/v1/stores")
-      .then((res) => res.json())
-      .then((data) => setMagasins(data))
-      .catch(() => setMagasins([]));
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log('Stores data received:', data); // Debug log
+        if (Array.isArray(data)) {
+          setStores(data);
+        } else {
+          console.error('Stores data is not an array:', data);
+          setStores([]);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching stores:', error);
+        setStores([]);
+      });
   }, []);
 
   /**
@@ -41,7 +57,7 @@ function Login() {
     setLoading(true);
     
     // Validate form fields
-    if (!nom.trim()) {
+    if (!name.trim()) {
       setError("Please enter your name!");
       setLoading(false);
       return;
@@ -54,7 +70,7 @@ function Login() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        nom: nom.trim(),
+        name: name.trim(),
         password: password.trim() || "password",
       }),
     })
@@ -72,7 +88,7 @@ function Login() {
       })
       .then(({ userData, token }) => {
         // For client role, ensure a store is selected
-        if (userData.role === "client" && !magasinId) {
+        if (userData.role === "client" && !storeId) {
           setError("As a client, please choose a store!");
           setLoading(false);
           return;
@@ -82,12 +98,12 @@ function Login() {
         setUser({
           id: userData.id,
           role: userData.role,
-          nom: userData.nom,
+          name: userData.name,
           token: token, // Store the token in user context
-          magasinId: userData.role === "client" ? parseInt(magasinId) : null,
-          magasinNom:
+          storeId: userData.role === "client" ? parseInt(storeId) : null,
+          storeName:
             userData.role === "client"
-              ? magasins.find((m) => m.id === parseInt(magasinId))?.nom || ""
+              ? stores.find((m) => m.id === parseInt(storeId))?.name || ""
               : "",
         });
       })
@@ -126,8 +142,8 @@ function Login() {
             </label>
             <input
               type="text"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Enter your username"
               style={{
                 width: "100%",
@@ -163,8 +179,8 @@ function Login() {
               Store (for clients):
             </label>
             <select
-              value={magasinId}
-              onChange={(e) => setMagasinId(e.target.value)}
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
               style={{
                 width: "100%",
                 padding: "0.5rem",
@@ -174,9 +190,9 @@ function Login() {
               }}
             >
               <option value="">-- Select a store --</option>
-              {magasins.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nom}
+              {Array.isArray(stores) && stores.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
                 </option>
               ))}
             </select>
@@ -254,21 +270,12 @@ function Login() {
               Manager:
             </p>
             <ul style={{ margin: "0", paddingLeft: "1.5rem", fontSize: "0.9rem" }}>
-              <li>Nom: <strong>g</strong></li>
-              <li>Mot de passe: <strong>g</strong></li>
+              <li>Name: <strong>g</strong></li>
+              <li>Password: <strong>g</strong></li>
+              <li>No store needed</li>
             </ul>
           </div>
         </div>
-        
-        <p style={{ 
-          margin: "0.5rem 0 0 0", 
-          fontSize: "0.8rem", 
-          color: "#666", 
-          fontStyle: "italic",
-          textAlign: "center" 
-        }}>
-          Autres comptes: Alice, Bob (clients)
-        </p>
       </div>
     </div>
   );

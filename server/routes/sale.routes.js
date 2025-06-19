@@ -1,5 +1,5 @@
 /**
- * Vente Routes
+ * Sale Routes
  * 
  * 
  * Base path: /api/v1/sales
@@ -10,7 +10,7 @@
  */
 
 import express from 'express';
-import * as controller from '../controllers/vente.controller.js';
+import * as controller from '../controllers/sale.controller.js';
 
 const router = express.Router();
 
@@ -30,11 +30,11 @@ router.get('/', controller.list);
  * Create a new sale transaction
  * 
  * Request body:
- * - magasinId: Store ID where the sale occurred
- * - clientId: Client ID (optional if clientNom is provided)
- * - clientNom: Client name (optional if clientId is provided)
- * - lignes: Array of sale line items with product ID, quantity, and unit price
- * - panier: Alternative format for sale items (backwards compatibility)
+ * - storeId: Store ID where the sale occurred
+ * - clientId: Client ID (optional if clientName is provided)
+ * - clientName: Client name (optional if clientId is provided)
+ * - lines: Array of sale line items with product ID, quantity, and unit price
+ * - cart: Alternative format for sale items (backwards compatibility)
  * 
  * The endpoint handles:
  * - Client creation if only name is provided

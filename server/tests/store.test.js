@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 
 // Test data
 const testStore = {
-  nom: "TEST STORE",
-  adresse: "TEST ADDRESS"
+  name: "TEST STORE",
+  address: "TEST ADDRESS"
 };
 
 let storeId;
@@ -21,7 +21,7 @@ beforeAll(async () => {
    // Create a test user with gestionnaire role for authentication
    const user = await prisma.user.create({
     data: {
-      nom: uniqueUsername,
+      name: uniqueUsername,
       role: "gestionnaire",
       password: "testpassword"
     }
@@ -42,17 +42,17 @@ afterAll(async () => {
   // Clean up test data
   if (storeId) {
     await prisma.stock.deleteMany({
-      where: { magasinId: storeId }
+      where: { storeId: storeId }
     });
     
-    await prisma.magasin.delete({
+    await prisma.store.delete({
       where: { id: storeId }
     });
   }
   
   // Delete test user
   await prisma.user.delete({
-    where: { nom: uniqueUsername }
+    where: { name: uniqueUsername }  
   });
   
   // Close Prisma connection
@@ -70,8 +70,8 @@ describe('Store CRUD Operations', () => {
     
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
-    expect(response.body.nom).toBe(testStore.nom);
-    expect(response.body.adresse).toBe(testStore.adresse);
+    expect(response.body.name).toBe(testStore.name);
+    expect(response.body.address).toBe(testStore.address);
     
     // Save the created store ID for later tests
     storeId = response.body.id;
@@ -98,8 +98,8 @@ describe('Store CRUD Operations', () => {
     
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id', storeId);
-    expect(response.body.nom).toBe(testStore.nom);
-    expect(response.body.adresse).toBe(testStore.adresse);
+    expect(response.body.name).toBe(testStore.name);
+    expect(response.body.address).toBe(testStore.address);
   });
   
   // Test getting store statistics

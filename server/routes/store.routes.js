@@ -1,5 +1,5 @@
 /**
- * Magasin Routes
+ * Store Routes
  * 
  * 
  * Base path: /api/v1/stores
@@ -10,7 +10,7 @@
  */
 
 import express from 'express';
-import * as controller from '../controllers/magasin.controller.js';
+import * as controller from '../controllers/store.controller.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import invalidateCache from '../utils/cacheInvalidation.js';
 
@@ -46,8 +46,8 @@ router.get('/:id', cacheMiddleware(300), controller.get);
  * Create a new store
  * 
  * Request body:
- * - nom: Store name
- * - adresse: Store address (optional)
+ * - name: Store name
+ * - address: Store address (optional)
  * 
  * Used by:
  * - Admin dashboard for store management
@@ -70,8 +70,8 @@ router.post('/', async (req, res, next) => {
  * - id: Store ID
  * 
  * Request body:
- * - nom: Store name (optional)
- * - adresse: Store address (optional)
+ * - name: Store name (optional)
+ * - address: Store address (optional)
  * 
  * Used by:
  * - Admin dashboard for store management
@@ -108,19 +108,19 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 /**
- * GET /api/v1/stores/:magasinId/stock
+ * GET /api/v1/stores/:storeId/stock
  * 
  * Get current stock levels for a specific store
  * 
  * Path parameters:
- * - magasinId: Store ID
+ * - storeId: Store ID
  * 
  * Used by:
  * - Store managers to view current inventory
  * - Inventory management interfaces
  * - Sales interfaces to check product availability
  */
-router.get('/:magasinId/stock', cacheMiddleware(300), controller.stock);
+router.get('/:storeId/stock', cacheMiddleware(300), controller.stock);
 
 
 export default router;

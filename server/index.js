@@ -73,6 +73,21 @@ app.use('/api/v1/stock', (await import('./routes/stock.routes.js')).default);
 app.use('/api/v1/refunds', (await import('./routes/refund.routes.js')).default);
 
 /**
+ * API Health Check Endpoint
+ * 
+ * Health check endpoint under API v1 namespace
+ */
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0',
+    api: 'v1'
+  });
+});
+
+/**
  * Global Error Handling Middleware
  * 
  * Catches all errors thrown in route handlers and middleware
@@ -83,8 +98,16 @@ app.use(errorHandler);
 /**
  * Health Check Endpoint
  * 
- * Simple endpoint to verify API is running
+ * Comprehensive endpoint to verify API is running and healthy
+ * Returns status, timestamp, and environment information
  */
-app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
+});
 
 export default app;

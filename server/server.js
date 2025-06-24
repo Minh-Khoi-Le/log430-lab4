@@ -72,8 +72,60 @@ app.use('/api/v1/sales', saleRoutes);
 app.use('/api/v1/maisonmere', maisonMereRoutes);
 app.use('/api/v1/refunds', refundRoutes);
 
+// API Health check endpoint
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    // Check database connectivity
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      pod: os.hostname(),
+      database: 'connected',
+      environment: process.env.NODE_ENV || 'development',
+      api: 'v1'
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      pod: os.hostname(),
+      database: 'disconnected',
+      environment: process.env.NODE_ENV || 'development',
+      api: 'v1',
+      error: error.message
+    });
+  }
+});
+
 // Error handler
 app.use(errorHandler);
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Check database connectivity
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      pod: os.hostname(),
+      database: 'connected',
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      pod: os.hostname(),
+      database: 'disconnected',
+      environment: process.env.NODE_ENV || 'development',
+      error: error.message
+    });
+  }
+});
 
 // Start server
 const server = app.listen(PORT, () => {

@@ -16,12 +16,14 @@ This directory contains stress tests for the main application features using [k6
 ## Running Tests
 
 ### Windows
-```
+
+``` bash
 run-k6-tests.bat
 ```
 
 ### Individual Tests
-```
+
+``` bash
 k6 run server/tests/k6/auth-test.js
 k6 run server/tests/k6/product-test.js
 k6 run server/tests/k6/cart-test.js
@@ -35,4 +37,4 @@ You can adjust test parameters in each file:
 - Test duration
 - Thresholds for acceptable performance
 
-The main configuration is in `config.js` where you can set the base URL and global thresholds. 
+The main configuration is in `config.js` where you can set the base URL and global thresholds.

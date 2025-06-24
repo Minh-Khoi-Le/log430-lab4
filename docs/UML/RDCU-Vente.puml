@@ -1,33 +1,54 @@
 @startuml RDCU Vente
 
-title RDCU - Vente produit
+title RDCU - Vente produit 
 
 actor Client
+participant "Cart Context" as CartCtx
 participant "UI React" as Frontend
+participant "Auth Middleware" as Auth
+participant "Cache Middleware" as Cache
 participant "Express API" as Backend
-participant "VenteController" as Controller
-participant "VenteDAO" as DAO
-participant "Prisma (DB)" as DB
+participant "Sale Controller" as Controller
+participant "Product Service" as ProductSvc
+participant "Redis Cache" as Redis
+participant "Prisma Client" as Prisma
+participant "PostgreSQL DB" as DB
 
-Client -> Frontend : Valider achat (Confirmer panier)
-Frontend -> Backend : POST /api/v1/ventes {userId, magasinId, panier}
-Backend -> Controller : createVente(...)
-Controller -> DAO : createVente(...)
-DAO -> DB : Vérifier stock (stock.findFirst)
-DB --> DAO : Stock OK/KO
+Client -> CartCtx : addToCart(product)
+CartCtx -> Frontend : updateCartState()
+Client -> Frontend : checkout()
+Frontend -> Backend : POST /api/v1/sales {userId, storeId, items}
+Backend -> Auth : validateAuth(token)
+Auth -> Backend : user authenticated
+Backend -> Cache : checkCache(key)
+Cache -> Redis : getCache(key)
+Redis --> Cache : cache miss
+Cache -> Backend : proceed to controller
+Backend -> Controller : create(req, res, next)
+Controller -> ProductSvc : validateStock(items)
+ProductSvc -> Prisma : findMany(productIds)
+Prisma -> DB : SELECT products, stock
+DB --> Prisma : products with stock
+Prisma --> ProductSvc : product data
+ProductSvc --> Controller : stock validation result
+
 alt Stock suffisant
-  DAO -> DB : Vérifier user (user.findUnique)
-  DB --> DAO : User OK
-  DAO -> DB : Créer vente (vente.create)
-  DAO -> DB : Créer lignes (ligneVente.createMany)
-  DAO -> DB : Update stocks (stock.updateMany)
-  DB --> DAO : Success
-  DAO --> Controller : {success, venteId}
-  Controller --> Backend : 201 Created (Achat confirmé)
-  Backend --> Frontend : 201 Created + Vente details
+  Controller -> Prisma : sale.create (transaction)
+  Prisma -> DB : BEGIN TRANSACTION
+  Prisma -> DB : INSERT INTO Sale
+  Prisma -> DB : INSERT INTO SaleLine (batch)
+  Prisma -> DB : UPDATE Stock (decrease quantities)
+  DB --> Prisma : COMMIT SUCCESS
+  Prisma --> Controller : {saleId, total, date}
+  Controller -> Redis : invalidateCache(pattern)
+  Controller --> Backend : 201 Created
+  Backend --> Frontend : {success: true, sale: {...}}
+  Frontend -> CartCtx : clearCart()
 else Stock insuffisant
-  DAO --> Controller : {error: out of stock}
+  ProductSvc --> Controller : {error: "insufficient_stock"}
   Controller --> Backend : 400 Bad Request
-  Backend --> Frontend : 400 (Erreur stock)
+  Backend --> Frontend : {error: "Stock insuffisant"}
+  Frontend -> Client : Affichage erreur
 end
+
 @enduml

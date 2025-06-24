@@ -1,56 +1,79 @@
-@startuml
-title Modèle du domaine — LOG430 Magasin
+@startuml MDD Magasin
+title Modèle du domaine — LOG430 Magasin 
 
 '–––––––––––  Entités  –––––––––––
-class Produit {
+class Product {
     {key} id
-    nom
-    prix
+    name
+    price
     description
 }
 
-class Magasin {
+class Store {
     {key} id
-    nom
-    adresse
+    name
+    address
 }
 
 class Stock {
     {key} id
-    magasinId
-    produitId
-    quantite
+    storeId
+    productId
+    quantity
 }
 
 class User {
     {key} id
-    nom
+    name
     role
     password
 }
 
-class Vente {
+class Sale {
     {key} id
-    magasinId
+    storeId
     userId
     date
     total
+    status
 }
 
-class LigneVente {
+class SaleLine {
     {key} id
-    venteId
-    produitId
-    quantite
-    prixUnitaire
+    saleId
+    productId
+    quantity
+    unitPrice
+}
+
+class Refund {
+    {key} id
+    saleId
+    storeId
+    userId
+    date
+    total
+    reason
+}
+
+class RefundLine {
+    {key} id
+    refundId
+    productId
+    quantity
+    unitPrice
 }
 
 '–––––––––––  Associations & cardinalités  –––––––––––
-Magasin  "1"  o--  "0..*" Stock       : possède
-Produit  "1"  o--  "0..*" Stock       : stocké\npar
-
-Magasin  "1"  o--  "0..*" Vente       : réalise
-User     "1"  o--  "0..*" Vente       : effectue
-Vente    "1"  o--  "1..*" LigneVente  : comporte
-Produit  "1"  o--  "0..*" LigneVente  : présent\ncomme item
+Store     "1"     o--  "0..*" Stock        : possède
+Product   "1"     o--  "0..*" Stock        : stocké par
+Store     "1"     o--  "0..*" Sale         : réalise
+Store     "1"     o--  "0..*" Refund       : traite
+User      "1"     o--  "0..*" Sale         : effectue
+User      "1"     o--  "0..*" Refund       : demande
+Sale      "1"     o--  "1..*" SaleLine     : comporte
+Sale      "1"     o--  "0..*" Refund       : peut générer
+Product   "1"     o--  "0..*" SaleLine     : présent comme item
+Refund    "1"     o--  "1..*" RefundLine   : comporte
+Product   "1"     o--  "0..*" RefundLine   : remboursé comme item
 @enduml

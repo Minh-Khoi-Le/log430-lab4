@@ -1,37 +1,73 @@
 @startuml Diagramme de deploiement
-title Diagramme de deploiement — Architecture Docker Compose
+title Diagramme de deploiement — Architecture Kubernetes & Monitoring
 
-node "Client" {
-  artifact "Navigateur Web"
-  [React Vite App]
+node "Client Browser" {
+  artifact "React App" as ReactApp
+  artifact "Cart Context"
+  artifact "User Context"
+  artifact "API Client"
 }
 
-node "Docker Host" {
-  node "log430-client" {
-    [Nginx Static Server]
+cloud "Kubernetes Cluster" {
+  node "Frontend Pod" {
+    node "Nginx Container" {
+      artifact "Static Files"
+      artifact "Vite Build"
+    }
   }
-  node "log430-server" {
-    [Node.js Express API]
-    [Controllers]
-    [Routes]
-    [Prisma Client]
+  
+  node "Backend Pod(s)" {
+    node "Node.js Container" {
+      artifact "Express Server"
+      artifact "Controllers"
+      artifact "Services"
+      artifact "Middleware"
+      artifact "Prisma Client"
+    }
   }
-  node "magasin-db" {
+  
+  node "Database Pod" {
     database "PostgreSQL" as DB {
-      [User]
-      [Produit]
-      [Magasin]
-      [Stock]
-      [Vente]
-      [LigneVente]
+      artifact "Store Tables"
+      artifact "Product Tables"
+      artifact "User Tables"
+      artifact "Stock Tables"
+      artifact "Sale Tables"
+      artifact "Refund Tables"
+    }
+  }
+  
+  node "Cache Pod" {
+    database "Redis" {
+      artifact "API Cache"
+      artifact "Session Data"
+    }
+  }
+  
+  node "Monitoring Pod" {
+    node "Prometheus Container" {
+      artifact "Metrics Collection"
+    }
+    node "Grafana Container" {
+      artifact "Dashboards"
+      artifact "Visualization"
     }
   }
 }
 
-[React Vite App] -down-> [Nginx Static Server] : build
-[React Vite App] --> [Node.js Express API] : REST API (fetch)
-[Node.js Express API] --> [Controllers]
-[Controllers] --> [Routes]
-[Controllers] --> [Prisma Client]
-[Prisma Client] --> DB
+node "Load Testing Environment" {
+  artifact "K6 Tests"
+}
+
+' Connections
+ReactApp --> "Express Server" : HTTPS/REST API
+"Express Server" --> "Controllers"
+"Controllers" --> "Services"
+"Services" --> "Prisma Client"
+"Prisma Client" --> DB
+"Middleware" --> "API Cache" : caching
+"Express Server" --> "Metrics Collection" : metrics
+"Metrics Collection" --> "Dashboards" : data
+"K6 Tests" --> "Express Server" : load testing
+
 @enduml

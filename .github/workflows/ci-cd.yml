@@ -12,16 +12,25 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:15
         env:
-          POSTGRES_DB: testdb
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: magasin_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
-        # Donne le temps à la DB de démarrer
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -47,13 +56,17 @@ jobs:
         npx prisma generate
         npx prisma migrate deploy
       env:
-        DATABASE_URL: "postgresql://testuser:testpass@localhost:5432/testdb"
+        DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/magasin_db"
 
     - name: Run backend tests
       run: |
         cd server
-        # Ajoute ici tes tests si tu en as (ex: npm test)
-        # npm test
+        npm test
+      env:
+        NODE_ENV: test
+        DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/magasin_db"
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
 
     # ------- Build Frontend -------
     - name: Set up Node.js (frontend)
@@ -66,9 +79,53 @@ jobs:
     - name: Install frontend dependencies
       run: cd client && npm ci
 
+    - name: Run frontend linting
+      run: cd client && npm run lint
+
     - name: Build frontend (Vite)
       run: cd client && npm run build
 
-    # ------- Docker build -------
+    # ------- Docker build & Test -------
     - name: Build Docker images
       run: docker-compose build
+
+    - name: Test Docker services startup
+      run: |
+        docker-compose up -d db redis
+        sleep 10
+        docker-compose down
+
+  # ------- K6 Performance Tests (optional job) -------
+  performance-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+
+    - name: Start services with Docker Compose
+      run: |
+        docker-compose up -d
+        sleep 30  # Wait for services to be ready
+
+    - name: Install K6
+      run: |
+        sudo gpg -k
+        sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+
+    - name: Wait for API to be ready
+      run: |
+        timeout 120 bash -c 'until curl -f http://localhost:3000/api/v1/health; do sleep 2; done'
+
+    - name: Run K6 performance tests
+      run: |
+        k6 run server/tests/k6/product-test.js
+        k6 run server/tests/k6/load-balance-test.js
+
+    - name: Cleanup
+      run: docker-compose down

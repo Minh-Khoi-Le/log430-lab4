@@ -1,8 +1,8 @@
 import Redis from 'ioredis';
 import { Counter } from 'prom-client';
 
-// Check if Redis is disabled via environment variable
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true';
+// Check if Redis is disabled via environment variable or if we're in test mode
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || process.env.NODE_ENV === 'test';
 
 // Create Redis client with error handling
 let redisClient = null;
@@ -14,9 +14,17 @@ if (!REDIS_DISABLED) {
       host: process.env.REDIS_HOST || 'localhost',
       port: process.env.REDIS_PORT || 6379,
       password: process.env.REDIS_PASSWORD || '',
-      retryStrategy: (times) => Math.min(times * 50, 2000),
+      retryStrategy: (times) => {
+        // In test mode, don't retry to avoid hanging connections
+        if (process.env.NODE_ENV === 'test') {
+          return null;
+        }
+        return Math.min(times * 50, 2000);
+      },
       lazyConnect: true, // Don't connect immediately
-      maxRetriesPerRequest: 3
+      maxRetriesPerRequest: 1, // Reduced for tests
+      connectTimeout: 1000, // Short timeout for tests
+      commandTimeout: 1000
     });
 
     // Handle Redis connection events
@@ -45,7 +53,7 @@ if (!REDIS_DISABLED) {
     redisConnected = false;
   }
 } else {
-  console.log('Redis disabled via REDIS_DISABLED environment variable');
+  console.log('Redis disabled for test environment');
 }
 
 // Cache TTL in seconds
@@ -156,4 +164,25 @@ export const deleteCachePattern = async (pattern) => {
   }
 };
 
-export default redisClient; 
+/**
+ * Cleanup Redis connection - use this in test teardown
+ */
+export const cleanup = async () => {
+  if (redisClient) {
+    try {
+      await redisClient.quit();
+      redisClient = null;
+      redisConnected = false;
+    } catch (error) {
+      console.warn('Redis cleanup error:', error.message);
+    }
+  }
+};
+
+// Export Redis availability flag
+export const isRedisEnabled = !REDIS_DISABLED && redisConnected;
+
+// Export Redis disabled flag for tests
+export const isRedisDisabled = REDIS_DISABLED;
+
+export default redisClient;

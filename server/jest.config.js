@@ -10,14 +10,14 @@ export default {
   
   // The glob patterns Jest uses to detect test files
   testMatch: [
-    process.env.NODE_ENV === 'test' ? '**/tests/**/*.test.js' : []
+    '**/tests/**/*.test.js'
   ],
   
   // Indicates whether the coverage information should be collected
   collectCoverage: false,
   
   // The maximum amount of workers used to run your tests
-  maxWorkers: '50%',
+  maxWorkers: 1,
   
   // An array of regexp pattern strings that are matched against all test paths
   // matched tests are skipped
@@ -45,4 +45,7 @@ export default {
   watch: false,
   watchAll: false,
   watchman: false,
+  
+  // Force Jest to exit after tests complete
+  forceExit: true,
 }; 

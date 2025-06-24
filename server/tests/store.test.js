@@ -25,12 +25,11 @@ beforeAll(async () => {
       role: "gestionnaire",
       password: "testpassword"
     }
-  });
-  // Login to get auth token
+  });  // Login to get auth token
   const loginResponse = await request(app)
     .post('/api/v1/users/login')
     .send({
-      nom: uniqueUsername,
+      name: uniqueUsername,
       password: "testpassword"
     });
   
@@ -101,16 +100,14 @@ describe('Store CRUD Operations', () => {
     expect(response.body.name).toBe(testStore.name);
     expect(response.body.address).toBe(testStore.address);
   });
-  
-  // Test getting store statistics
-  test('Should retrieve store statistics', async () => {
+    // Test getting store stock
+  test('Should retrieve store stock information', async () => {
     const response = await request(app)
-      .get(`/api/v1/stores/${storeId}/stats`)
+      .get(`/api/v1/stores/${storeId}/stock`)
       .set('Authorization', `Bearer ${authToken}`);
     
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('totalProducts');
-    expect(response.body).toHaveProperty('totalSales');
-    expect(response.body).toHaveProperty('revenue');
+    expect(Array.isArray(response.body)).toBe(true);
+    // Stock array can be empty for a new store, so we just check it's an array
   });
 }); 

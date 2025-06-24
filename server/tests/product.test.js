@@ -21,7 +21,7 @@ beforeAll(async () => {
    // Create a test user with gestionnaire role for authentication
    const user = await prisma.user.create({
     data: {
-      nom: uniqueUsername,
+      name: uniqueUsername,
       role: "gestionnaire",
       password: "testpassword"
     }
@@ -30,7 +30,7 @@ beforeAll(async () => {
   const loginResponse = await request(app)
     .post('/api/v1/users/login')
     .send({
-      nom: uniqueUsername,
+      name: uniqueUsername,
       password: "testpassword"
     });
   
@@ -41,19 +41,28 @@ beforeAll(async () => {
 afterAll(async () => {
   // Clean up test data
   if (createdProductId) {
-    await prisma.stock.deleteMany({
-      where: { productId: createdProductId }
-    });
-    
-    await prisma.product.delete({
-      where: { id: createdProductId }
-    });
+    try {
+      await prisma.stock.deleteMany({
+        where: { productId: createdProductId }
+      });
+      
+      await prisma.product.delete({
+        where: { id: createdProductId }
+      });
+    } catch (error) {
+      // Product might already be deleted, ignore the error
+      console.log('Product cleanup: Product might already be deleted');
+    }
   }
   
   // Delete test user
-  await prisma.user.delete({
-    where: { nom: uniqueUsername }
-  });
+  try {
+    await prisma.user.delete({
+      where: { name: uniqueUsername }
+    });
+  } catch (error) {
+    console.log('User cleanup error:', error.message);
+  }
   
   // Close Prisma connection
   await prisma.$disconnect();
@@ -67,11 +76,10 @@ describe('Product CRUD Operations', () => {
       .post('/api/v1/products')
       .set('Authorization', `Bearer ${authToken}`)
       .send(testProduct);
-    
-    expect(response.status).toBe(201);
+      expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
-    expect(response.body.nom).toBe(testProduct.name);
-    expect(response.body.prix).toBe(testProduct.price);
+    expect(response.body.name).toBe(testProduct.name);
+    expect(response.body.price).toBe(testProduct.price);
     expect(response.body.description).toBe(testProduct.description);
     
     // Save the created product ID for later tests
@@ -92,10 +100,9 @@ describe('Product CRUD Operations', () => {
   test('Should retrieve a specific product by ID', async () => {
     const response = await request(app)
       .get(`/api/v1/products/${createdProductId}`);
-    
-    expect(response.status).toBe(200);
+      expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id', createdProductId);
-    expect(response.body.nom).toBe(testProduct.name);
+    expect(response.body.name).toBe(testProduct.name);
   });
   
   // Test updating a product
@@ -110,21 +117,19 @@ describe('Product CRUD Operations', () => {
       .put(`/api/v1/products/${createdProductId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send(updatedData);
-    
-    expect(response.status).toBe(200);
+      expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id', createdProductId);
-    expect(response.body.nom).toBe(updatedData.name);
-    expect(response.body.prix).toBe(updatedData.price);
+    expect(response.body.name).toBe(updatedData.name);
+    expect(response.body.price).toBe(updatedData.price);
     expect(response.body.description).toBe(updatedData.description);
   });
-  
-  // Test deleting a product
+    // Test deleting a product
   test('Should delete an existing product', async () => {
     const response = await request(app)
       .delete(`/api/v1/products/${createdProductId}`)
       .set('Authorization', `Bearer ${authToken}`);
     
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(204);
     
     // Verify the product is deleted
     const getResponse = await request(app)

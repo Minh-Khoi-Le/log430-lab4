@@ -50,7 +50,7 @@ router.get("/products", async (req, res) => {
  */
 router.get("/products/:id", async (req, res) => {
   try {
-    const product = await ProductDAO.getById(req.params.id);
+    const product = await ProductDAO.findById(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {

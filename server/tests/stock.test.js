@@ -57,17 +57,33 @@ beforeAll(async () => {
     .post('/api/v1/stores')
     .set('Authorization', `Bearer ${authToken}`)
     .send(testStore);
+    testStoreId = storeResponse.body.id;
   
-  testStoreId = storeResponse.body.id;
+  // Create initial stock for the product in the store
+  await request(app)
+    .put(`/api/v1/stock/product/${testProductId}`)
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({
+      storeId: testStoreId,
+      quantity: 10
+    });
 });
 
 afterAll(async () => {
-  // Clean up test data
-  if (testStoreId) {
+  // Clean up test data in correct order
+  // Delete all stock records first to avoid foreign key constraints
+  if (testStoreId && testProductId) {
     await prisma.stock.deleteMany({
-      where: { storeId: testStoreId }
+      where: { 
+        OR: [
+          { storeId: testStoreId },
+          { productId: testProductId }
+        ]
+      }
     });
-    
+  }
+  
+  if (testStoreId) {
     await prisma.store.delete({
       where: { id: testStoreId }
     });
@@ -103,19 +119,22 @@ describe('Stock Operations', () => {
     expect(stockEntry).toBeDefined();
     expect(stockEntry.quantity).toBe(10);
   });
-  
-  // Test updating stock quantity
+    // Test updating stock quantity
   test('Should update stock quantity', async () => {
     const updatedQuantity = 20;
     
     const response = await request(app)
-      .put(`/api/v1/stock/${testProductId}`)
+      .put(`/api/v1/stock/product/${testProductId}`)
       .set('Authorization', `Bearer ${authToken}`)
-      .send({ quantity: updatedQuantity });
+      .send({ 
+        storeId: testStoreId,
+        quantity: updatedQuantity 
+      });
     
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('id', testProductId);
-    expect(response.body.quantity).toBe(updatedQuantity);
+    expect(response.body).toHaveProperty('quantity', updatedQuantity);
+    expect(response.body).toHaveProperty('productId', testProductId);
+    expect(response.body).toHaveProperty('storeId', testStoreId);
   });
   
   // Test getting stock for a store
@@ -129,22 +148,25 @@ describe('Stock Operations', () => {
     const stockEntry = response.body.find(s => s.productId === testProductId);
     expect(stockEntry).toBeDefined();
   });
-
   // Test setting product as out of stock
   test('Should set product as out of stock', async () => {
     const response = await request(app)
-      .put(`/api/v1/stock/${testProductId}`)
+      .put(`/api/v1/stock/product/${testProductId}`)
       .set('Authorization', `Bearer ${authToken}`)
-      .send({ quantity: 0 });
+      .send({ 
+        storeId: testStoreId,
+        quantity: 0 
+      });
     
     expect(response.status).toBe(200);
     expect(response.body.quantity).toBe(0);
     
-    // Verify availability is now false
-    const availabilityResponse = await request(app)
-      .get(`/api/v1/stock/availability/${testProductId}/${testStoreId}`);
+    // Verify stock is updated by checking the product stock endpoint
+    const stockResponse = await request(app)
+      .get(`/api/v1/stock/product/${testProductId}`);
     
-    expect(availabilityResponse.status).toBe(200);
-    expect(availabilityResponse.body).toHaveProperty('available', false);
+    expect(stockResponse.status).toBe(200);
+    const stockEntry = stockResponse.body.find(s => s.storeId === testStoreId);
+    expect(stockEntry.quantity).toBe(0);
   });
 }); 

@@ -1,5 +1,6 @@
 import SaleDAO   from '../dao/sale.dao.js';
 import { PrismaClient } from '@prisma/client';
+import invalidateCache from '../utils/cacheInvalidation.js';
 const prisma = new PrismaClient();
 
 /**
@@ -201,12 +202,12 @@ export async function refund(req, res, next) {
       for (const line of sale.lines) {
         await tx.stock.updateMany({
           where: { 
-            productId: line.productId, 
-            storeId: sale.storeId 
+            productId: parseInt(line.productId), 
+            storeId: parseInt(sale.storeId)
           },
           data: { 
             quantity: { 
-              increment: line.quantity 
+              increment: parseInt(line.quantity)
             } 
           }
         });
@@ -224,6 +225,9 @@ export async function refund(req, res, next) {
       
       return deletedSale;
     });
+
+    // Invalidate stock cache after refund
+    await invalidateCache.stock();
 
     res.status(200).json({ 
       success: true, 

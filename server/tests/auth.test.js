@@ -10,13 +10,13 @@ const uniqueClientUsername = `TestClient_Auth_${Date.now()}`;
 
 // Test data
 const testUser = {
-  nom: "AuthTestUser",
+  name: "AuthTestUser",
   password: "testpassword",
   role: "client"
 };
 
 const testAdmin = {
-  nom: "AuthTestAdmin",
+  name: "AuthTestAdmin", 
   password: "adminpassword",
   role: "gestionnaire"
 };
@@ -29,7 +29,7 @@ beforeAll(async () => {
   // Create test users
   await prisma.user.create({
     data: {
-      nom: uniqueAdminUsername,
+      name: uniqueAdminUsername,
       role: "gestionnaire",
       password: "adminpassword"
     }
@@ -37,7 +37,7 @@ beforeAll(async () => {
   
   await prisma.user.create({
     data: {
-      nom: uniqueClientUsername,
+      name: uniqueClientUsername,
       role: "client",
       password: "clientpassword"
     }
@@ -48,8 +48,8 @@ afterAll(async () => {
   // Clean up test users
   await prisma.user.deleteMany({
     where: {
-      nom: {
-        in: [uniqueAdminUsername, uniqueEmployeeUsername]
+      name: {
+        in: [uniqueAdminUsername, uniqueClientUsername]
       }
     }
   });
@@ -59,48 +59,45 @@ afterAll(async () => {
 });
 
 describe('Authentication Operations', () => {
-  
   // Test user login
   test('Should authenticate a valid user', async () => {
     const response = await request(app)
       .post('/api/v1/users/login')
       .send({
-        nom: testUser.nom,
-        password: testUser.password
+        name: uniqueClientUsername,
+        password: "clientpassword"
       });
     
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id');
-    expect(response.body).toHaveProperty('nom', testUser.nom);
-    expect(response.body).toHaveProperty('role', testUser.role);
+    expect(response.body).toHaveProperty('name', uniqueClientUsername);
+    expect(response.body).toHaveProperty('role', "client");
     expect(response.headers).toHaveProperty('authorization');
     
     // Save token for later tests
     userToken = response.headers.authorization.split(' ')[1];
   });
-  
   // Test admin login
   test('Should authenticate an admin user', async () => {
     const response = await request(app)
       .post('/api/v1/users/login')
       .send({
-        nom: testAdmin.nom,
-        password: testAdmin.password
+        name: uniqueAdminUsername,
+        password: "adminpassword"
       });
     
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('role', testAdmin.role);
+    expect(response.body).toHaveProperty('role', "gestionnaire");
     
     // Save token for later tests
     adminToken = response.headers.authorization.split(' ')[1];
   });
-  
   // Test login with invalid credentials
   test('Should reject invalid login credentials', async () => {
     const response = await request(app)
       .post('/api/v1/users/login')
       .send({
-        nom: testUser.nom,
+        name: uniqueClientUsername,
         password: "wrongpassword"
       });
     

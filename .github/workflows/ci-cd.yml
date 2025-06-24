@@ -77,13 +77,13 @@ jobs:
 
     # ------- Docker build & Test -------
     - name: Build Docker images
-      run: docker-compose build
+      run: docker compose build
 
     - name: Test Docker services startup
       run: |
-        docker-compose up -d db redis
+        docker compose up -d db redis
         sleep 10
-        docker-compose down
+        docker compose down
 
   # ------- K6 Performance Tests (optional job) -------
   performance-tests:
@@ -97,7 +97,7 @@ jobs:
 
     - name: Start services with Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 30  # Wait for services to be ready
 
     - name: Install K6
@@ -118,4 +118,4 @@ jobs:
         k6 run server/tests/k6/load-balance-test.js
 
     - name: Cleanup
-      run: docker-compose down
+      run: docker compose down

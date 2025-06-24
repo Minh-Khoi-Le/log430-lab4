@@ -73,8 +73,8 @@ For standard Docker Compose deployment:
 
 ```bash
 # Start the application
-docker-compose up -d
+docker-compose up --build
 
-# Run tests
+# Run load tests
 scripts\run-k6-tests.bat
 ```
